@@ -41,3 +41,19 @@
 
 ## Phase 2 SEO pages (not built)
 Board and batten spacing for a: 1. 6 ft wall, 2. 8 ft wall, 3. 9 ft wall, 4. 10 ft wall, 5. 12 ft wall, 6. 14 ft wall, 7. 16 ft wall, 8. 20 ft wall. Plus: 9. board and batten spacing for an entire room, 10. board and batten spacing 12 inch gap, 11. 16 inch gap, 12. 1x3 batten spacing, 13. 1x4 batten spacing, 14. 1x2 batten spacing, 15. board and batten with no end battens, 16. board and batten cut list, 17. how many boards for a 10 ft wall, 18. board and batten for a staircase wall, 19. board and batten in a bathroom/nursery, 20. board and batten spacing in metric (cm).
+
+## Gap fix (Gamora, 2026-10-20)
+Done:
+- Must 1: "Center on a window, TV or mirror": a gap or a batten is centered on a point from the left edge. Keeps the gap, shows both end spaces, warns about a sliver, red dashed line in the drawing.
+- Must 2: "Sample wall. Type yours." line above the results until the visitor changes anything. No hash is written while untouched.
+- Must 3: gap mode echoes the rounding in the result ("You asked for 12 in. The nearest even layout has 11 battens, with gaps of 11 5/8 in").
+- Should 4: Download drawing (PNG, light palette) and Download marks (CSV: marks, rails, cut list, boards).
+- Should 6: different width for the end battens (solver, gap mode, drawing, tests).
+- Should 7: 10 pre-rendered pages (8, 10, 12, 16 ft wall; 1x4; 1x2; no end battens; how many boards; how far apart; with rails). Each has its own title, H1, preset tool, computed tables, hand-written text, FAQ, breadcrumb and FAQ schema. Linked from the home page.
+- Tests 23 to 29, build OK, Lighthouse 100/100/100/100 on home and a preset page.
+Skipped:
+- 5 two-over-one pattern: changes the single-purpose layout engine; later.
+- 8 one-field typing: the feet box already takes 12'6; a full single field is a larger input rewrite.
+- 9 Pinterest image and PDF: Print covers PDF; needs design work.
+- 10 Organization and author schema: no real author or organization to name.
+- 11 wainscot and panel variants: separate tool.

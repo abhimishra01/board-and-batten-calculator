@@ -6,6 +6,8 @@ import AdSlot from '../components/AdSlot.astro';
 import Faq from '../components/Faq.astro';
 import site from '../site.config.ts';
 import { faq } from '../data/faq.ts';
+import { layouts } from '../data/layouts.ts';
+import { href } from '../lib/url.ts';
 
 const base = `https://${site.domain}`;
 const jsonLd = [
@@ -43,5 +45,14 @@ const jsonLd = [
     <AdSlot />
   </section>
   <Article />
+  <section aria-labelledby="layouts-h" class="mx-auto max-w-5xl px-4 pt-16">
+    <h2 id="layouts-h" class="text-2xl font-bold tracking-tight">Layouts for common cases</h2>
+    <p class="mt-2 max-w-2xl text-muted">Each page opens the calculator with the numbers for one case and adds a table for it.</p>
+    <ul class="mt-5 grid gap-3 sm:grid-cols-2">
+      {layouts.map((l) => (
+        <li><a href={href(`/${l.slug}/`)} class="block rounded-xl border border-line bg-card p-4 no-underline hover:border-brand"><span class="font-semibold text-ink">{l.h1}</span><span class="mt-1 block text-sm text-muted">{l.blurb}</span></a></li>
+      ))}
+    </ul>
+  </section>
   <Faq />
 </Base>

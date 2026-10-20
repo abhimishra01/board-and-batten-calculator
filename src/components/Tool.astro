@@ -1,7 +1,10 @@
 ---
 import LenField from './LenField.astro';
+// preset: starting values for a pre-set page (inches). note: the line shown until the visitor types.
+interface Props { preset?: Record<string, unknown> | null; note?: string; }
+const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
 ---
-<section id="tool" aria-label="Board and batten calculator" class="rounded-2xl border border-line bg-card p-4 shadow-[var(--card-shadow)] sm:p-6">
+<section id="tool" aria-label="Board and batten calculator" data-preset={preset ? JSON.stringify(preset) : undefined} data-note={note} class="rounded-2xl border border-line bg-card p-4 shadow-[var(--card-shadow)] sm:p-6">
   <p class="print-title hidden text-lg font-bold">Board and batten layout</p>
   <p id="print-summary" class="print-summary hidden"></p>
   <div class="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -58,7 +61,25 @@ import LenField from './LenField.astro';
       <div>
         <label class="chk"><input type="checkbox" id="ends" checked /> Batten at each end of the wall</label>
         <label class="chk"><input type="checkbox" id="rails-on" /> Add horizontal rails</label>
+        <label class="chk"><input type="checkbox" id="wide-on" /> Different width for the end battens</label>
+        <label class="chk"><input type="checkbox" id="anchor-on" /> Center on a window, TV or mirror</label>
       </div>
+
+      <fieldset id="wide-box" class="m-0 hidden min-w-0 rounded-xl border border-line p-3" data-len="endb">
+        <legend class="lbl px-1">End batten width</legend>
+        <LenField id="endb" label="End batten width" inch="3" fr={8} />
+        <p class="mt-2 text-xs text-muted">Applies to the first and last batten when you have a batten at each end. The gaps stay equal.</p>
+      </fieldset>
+
+      <fieldset id="anchor-box" class="m-0 hidden min-w-0 rounded-xl border border-line p-3" data-len="anchor">
+        <legend class="lbl px-1">Middle of the feature, from the left edge</legend>
+        <LenField id="anchor" label="Feature position from the left edge" ft="5" inch="4" />
+        <div class="seg mt-3" role="radiogroup" aria-label="What sits on the middle of the feature">
+          <label><input class="sr-only" type="radio" name="akind" value="gap" checked /><span>A gap</span></label>
+          <label><input class="sr-only" type="radio" name="akind" value="batten" /><span>A batten</span></label>
+        </div>
+        <p class="mt-2 text-xs text-muted">The tool keeps the gap from above and slides the whole run until a gap (or a batten) is centered on this point. The count can change, and the two end spaces will not match. The end batten options do not apply.</p>
+      </fieldset>
 
       <fieldset id="rails" class="m-0 hidden min-w-0 gap-3 rounded-xl border border-line p-3" data-len="rail">
         <legend class="lbl px-1">Rails</legend>
@@ -92,6 +113,8 @@ import LenField from './LenField.astro';
             <p class="text-sm text-muted">between marks</p>
           </div>
         </div>
+        <p id="r-sample" class="mt-3 hidden rounded-lg border border-line bg-paper px-3 py-2 text-sm font-semibold"></p>
+        <p id="r-note" class="mt-3 hidden text-sm font-medium"></p>
         <ul id="r-warn" class="mt-3 list-disc pl-5 text-sm text-muted"></ul>
 
         <figure class="mt-5 m-0">
@@ -124,6 +147,8 @@ import LenField from './LenField.astro';
         <div class="no-print mt-6 flex flex-wrap gap-3">
           <button type="button" class="btn btn-primary" id="copy">Copy cut list and marks</button>
           <button type="button" class="btn" id="copy-link">Copy link</button>
+          <button type="button" class="btn" id="dl-png">Download drawing (PNG)</button>
+          <button type="button" class="btn" id="dl-csv">Download marks (CSV)</button>
           <button type="button" class="btn" id="print">Print</button>
           <span id="copy-note" class="self-center text-sm text-muted" role="status"></span>
         </div>
@@ -210,7 +235,8 @@ import LenField from './LenField.astro';
 
   // ---- drawing ----
   const NS = 'http://www.w3.org/2000/svg';
-  function draw(p: any, W: number, H: number, b: number) {
+  let lastSvg = '';
+  function draw(p: any, W: number, H: number, anchorX: number | null) {
     const fs = Math.max(W, H) / 20; // base text size; large enough to read on a phone
     const padL = fs * 2.2, padT = fs * 2, padR = fs * 0.8, padB = fs * 5.4;
     const vbW = W + padL + padR, vbH = H + padT + padB;
@@ -228,7 +254,10 @@ import LenField from './LenField.astro';
       }
     }
     for (const m of p.marks) {
-      s += `<rect x="${f1(m.left)}" y="0" width="${f1(b)}" height="${f1(H)}" fill="var(--brand-ink)"/>`;
+      s += `<rect x="${f1(m.left)}" y="0" width="${f1(m.right - m.left)}" height="${f1(H)}" fill="var(--brand-ink)"/>`;
+    }
+    if (anchorX !== null) {
+      s += `<line x1="${f1(anchorX)}" y1="${f1(-fs * 0.2)}" x2="${f1(anchorX)}" y2="${f1(H)}" stroke="#b3261e" stroke-width="${f1(fs * 0.12)}" stroke-dasharray="${f1(fs * 0.4)} ${f1(fs * 0.3)}"/>`;
     }
     // number labels above: every k-th mark; the last one only when it does not touch the previous label
     const k = Math.max(1, Math.ceil((fs * 1.7) / p.pitch));
@@ -241,8 +270,10 @@ import LenField from './LenField.astro';
     }
     // first gap dimension
     const first = p.marks[0];
-    const gx1 = first.left > 0 ? 0 : first.right;
-    const gx2 = first.left > 0 ? first.left : (p.marks[1] ? p.marks[1].left : W);
+    // With no end battens the first gap is the wall edge to the first batten. In an anchored layout the end space is not a gap, so use the first real gap.
+    const edgeGap = first.left > 0 && anchorX === null;
+    const gx1 = edgeGap ? 0 : first.right;
+    const gx2 = edgeGap ? first.left : (p.marks[1] ? p.marks[1].left : W);
     const dy = H + fs * 1.4;
     s += `<g stroke="var(--ink)" stroke-width="${f1(fs * 0.07)}" fill="none"><path d="M${f1(gx1)} ${f1(dy - tick)}V${f1(dy + tick)}M${f1(gx2)} ${f1(dy - tick)}V${f1(dy + tick)}M${f1(gx1)} ${f1(dy)}H${f1(gx2)}"/></g>`;
     s += `<text x="${f1(gx2 + fs * 0.3)}" y="${f1(dy + fs * 0.32)}" font-size="${f1(fs * 0.85)}" fill="var(--ink)" font-weight="700">${esc(gapTxt)} gap</text>`;
@@ -256,10 +287,12 @@ import LenField from './LenField.astro';
     s += `<g stroke="var(--muted)" stroke-width="${f1(fs * 0.07)}" fill="none"><path d="M${f1(dx - tick)} 0H${f1(dx + tick)}M${f1(dx - tick)} ${f1(H)}H${f1(dx + tick)}M${f1(dx)} 0V${f1(H)}"/></g>`;
     s += `<text transform="translate(${f1(dx - fs * 0.25)} ${f1(H / 2)}) rotate(-90)" font-size="${f1(fs * 0.85)}" text-anchor="middle" fill="var(--muted)" paint-order="stroke" stroke="var(--paper)" stroke-width="${f1(fs * 0.5)}">${esc(heightTxt)}</text>`;
     s += `</g></svg>`;
+    lastSvg = s;
     el('draw').innerHTML = s;
   }
 
   // ---- results ----
+  let untouched = true;     // true until the visitor changes something: the sample line shows
   let last: any = null;     // last good plan, null while the inputs have an error
   let lastIn: any = null;   // the inputs that made it
   // Phone: show the summary bar only while the tool is on screen and the inputs are valid.
@@ -293,6 +326,22 @@ import LenField from './LenField.astro';
     return `Wall ${fmtLong(input.width)} wide x ${fmtLong(input.height)} high. Battens ${fmtShort(input.batten)} wide, ${p.count} of them, ${ends}.${p.rails ? ` ${p.rails.count} ${p.rails.count === 1 ? 'rail' : 'rails'} ${fmtShort(p.rails.width)} wide.` : ''}`;
   }
 
+  // Sample line, gap rounding echo and anchor end spaces.
+  function showNotes(p: any, input: any) {
+    const sample = el('r-sample');
+    sample.textContent = el('tool').dataset.note || '';
+    sample.classList.toggle('hidden', !untouched || !sample.textContent);
+    let note = '';
+    if (p.anchor) {
+      note = `Centered on ${fmtLong(input.anchor.x)} from the left: ${p.anchor.kind === 'gap' ? 'a gap' : 'a batten'} sits there. The left end space is ${fmtShort(p.anchor.left)} and the right end space is ${fmtShort(p.anchor.right)}.`;
+    } else if (input.mode === 'gap' && Math.abs(p.gap - input.targetGap) > 1 / 32) {
+      note = `You asked for a ${fmtShort(input.targetGap)} gap. The nearest even layout has ${p.count} battens, with gaps of ${fmtShort(p.gap)} (${p.gap > input.targetGap ? 'wider' : 'narrower'} by ${fmtShort(Math.abs(p.gap - input.targetGap))}).`;
+    }
+    const n = el('r-note');
+    n.textContent = note;
+    n.classList.toggle('hidden', !note);
+  }
+
   function compute() {
     const input = {
       width: readLen('width'),
@@ -304,8 +353,12 @@ import LenField from './LenField.astro';
       withEnds: $('ends').checked,
       metric: state.metric,
       rails: { on: $('rails-on').checked, count: readCount('rail-count'), width: readLen('rail') },
+      endWidth: $('wide-on').checked ? readLen('endb') : 0,
+      anchor: { on: $('anchor-on').checked, x: readLen('anchor'), kind: checkedValue('akind') },
     };
-    const p = plan(input);
+    const p = !input.endWidth && $('wide-on').checked && $('ends').checked
+      ? { ok: false, errors: ['Enter the end batten width.'], field: 'endb' }
+      : plan(input);
     document.querySelectorAll<HTMLElement>('.chip').forEach((c) =>
       c.setAttribute('aria-pressed', String(Math.abs(parseFloat(c.dataset.in!) - input.batten) < 1e-6)));
     if (!p.ok) {
@@ -327,7 +380,8 @@ import LenField from './LenField.astro';
     el('s-gap').textContent = fmtShort(p.gap);
     el('print-summary').textContent = summaryLine(p, input);
 
-    draw(p, input.width, input.height, input.batten);
+    draw(p, input.width, input.height, p.anchor ? input.anchor.x : null);
+    showNotes(p, input);
 
     const markRow = (m: any) => row([String(m.n), `<strong>${fmtLong(m.center)}</strong>`, fmtLong(m.left)]);
     el('marks').querySelector('tbody')!.innerHTML = p.marks.map(markRow).join('');
@@ -343,7 +397,7 @@ import LenField from './LenField.astro';
     el('buy-note').textContent = p.best
       ? `Best fit: ${p.best.boards} boards of ${stockLabel(p.best.stock)}. Counts include ${state.metric ? 'a 3 mm' : 'a 1/8 in'} saw cut. Buy one extra for mistakes.`
       : 'No stock length is long enough for the battens. Pick shorter battens or splice them.';
-    writeHash();
+    if (!untouched) writeHash();
     updateSticky();
   }
 
@@ -352,7 +406,7 @@ import LenField from './LenField.astro';
     if (!last || !lastIn) return '';
     const p = last;
     const L: string[] = ['Board and batten layout', summaryLine(p, lastIn),
-      `Gap ${fmtShort(p.gap)}, center to center ${fmtShort(p.pitch)}.`, '', 'Marks (center, from the left):'];
+      `Gap ${fmtShort(p.gap)}, center to center ${fmtShort(p.pitch)}.`, ...(p.anchor ? [`Left end space ${fmtShort(p.anchor.left)}, right end space ${fmtShort(p.anchor.right)}.`] : []), '', 'Marks (center, from the left):'];
     for (const m of p.marks) L.push(`${m.n}. ${fmtLong(m.center)}`);
     if (p.rails) {
       L.push('', 'Rail marks (center, from the floor):');
@@ -383,9 +437,52 @@ import LenField from './LenField.astro';
   });
   $('copy-link').addEventListener('click', () => {
     if (!last) { el('copy-note').textContent = 'Fix the inputs first.'; return; }
+    writeHash();
     copyToClipboard(location.href, 'Link copied.');
   });
   $('print').addEventListener('click', () => window.print());
+
+  // ---- downloads ----
+  function download(blob: Blob, name: string) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  const csvCell = (t: string) => `"${t.replace(/"/g, '""')}"`;
+  $('dl-csv').addEventListener('click', () => {
+    if (!last || !lastIn) { el('copy-note').textContent = 'Fix the inputs first.'; return; }
+    const p = last;
+    const rows: string[][] = [['Item', 'Number', 'Center', 'Edge', 'Note']];
+    for (const m of p.marks) rows.push(['Batten', String(m.n), fmtLong(m.center), fmtLong(m.left), 'from the left edge of the wall']);
+    if (p.rails) for (const m of p.rails.marks) rows.push(['Rail', String(m.n), fmtLong(m.center), fmtLong(m.left), 'from the floor']);
+    for (const c of cutLines(p, lastIn)) rows.push(['Cut list', '', '', '', c]);
+    for (const b of p.buy) rows.push(['Boards to buy', b.boards === null ? '' : String(b.boards), '', '', `${stockLabel(b.stock)}${b.boards === null ? ' (too short)' : ''}`]);
+    download(new Blob([rows.map((r) => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv' }), 'board-and-batten-marks.csv');
+  });
+  // The PNG always uses the light palette, so it prints well and reads the same in dark mode.
+  const LIGHT: Record<string, string> = { '--card': '#ffffff', '--paper': '#ffffff', '--ink': '#16181b', '--muted': '#5b6068', '--brand-ink': '#415415' };
+  $('dl-png').addEventListener('click', () => {
+    if (!last || !lastSvg) { el('copy-note').textContent = 'Fix the inputs first.'; return; }
+    const vb = lastSvg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/)!;
+    const vw = parseFloat(vb[1]), vh = parseFloat(vb[2]);
+    const px = 1600, pxH = Math.round((px * vh) / vw);
+    let svg = lastSvg.replace(/var\((--[\w-]+)\)/g, (_m, v) => LIGHT[v] || '#000')
+      .replace('width="100%"', `width="${px}" height="${pxH}"`)
+      .replace(/ style="[^"]*"/, '');
+    svg = svg.replace('>', `><rect width="100%" height="100%" fill="#ffffff"/>`);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = px; c.height = pxH;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, px, pxH);
+      c.toBlob((b) => { if (b) download(b, 'board-and-batten-layout.png'); else el('copy-note').textContent = 'Could not make the image.'; }, 'image/png');
+    };
+    img.onerror = () => { el('copy-note').textContent = 'Could not make the image.'; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
 
   // ---- share link in the address hash ----
   // Every text box and select with an id, except the hidden unit set.
@@ -398,6 +495,9 @@ import LenField from './LenField.astro';
       q.set('m', checkedValue('mode'));
       q.set('e', $('ends').checked ? '1' : '0');
       q.set('r', $('rails-on').checked ? '1' : '0');
+      q.set('w', $('wide-on').checked ? '1' : '0');
+      q.set('a', $('anchor-on').checked ? '1' : '0');
+      q.set('k', checkedValue('akind'));
       for (const id of activeIds()) q.set(id, val(id));
       history.replaceState(null, '', '#' + q.toString());
     } catch {}
@@ -411,6 +511,10 @@ import LenField from './LenField.astro';
       if (m === 'gap' || m === 'count') (form.querySelector(`input[name="mode"][value="${m}"]`) as HTMLInputElement).checked = true;
       if (q.get('e') !== null) $('ends').checked = q.get('e') === '1';
       if (q.get('r') !== null) $('rails-on').checked = q.get('r') === '1';
+      if (q.get('w') !== null) $('wide-on').checked = q.get('w') === '1';
+      if (q.get('a') !== null) $('anchor-on').checked = q.get('a') === '1';
+      const k = q.get('k');
+      if (k === 'gap' || k === 'batten') (form.querySelector(`input[name="akind"][value="${k}"]`) as HTMLInputElement).checked = true;
       for (const id of fieldIds) { const v = q.get(id); if (v !== null) $(id).value = v.slice(0, 12); }
     } catch {}
   }
@@ -420,26 +524,49 @@ import LenField from './LenField.astro';
     el('mode-count').classList.toggle('hidden', checkedValue('mode') !== 'count');
     el('mode-gap').classList.toggle('hidden', checkedValue('mode') !== 'gap');
     el('rails').classList.toggle('hidden', !$('rails-on').checked);
+    el('wide-box').classList.toggle('hidden', !$('wide-on').checked);
+    el('anchor-box').classList.toggle('hidden', !$('anchor-on').checked);
   }
   // Text boxes update on every key. Selects, radios and checkboxes update on change.
   const isText = (t: HTMLInputElement) => t.tagName === 'INPUT' && t.type === 'text';
   form.addEventListener('input', (e) => {
     if (!isText(e.target as HTMLInputElement)) return;
+    untouched = false;
     compute();
   });
   form.addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
     if (isText(t)) return;
+    untouched = false;
     if (t.name === 'units') setUnits(t.value === 'cm');
     syncVisibility(); compute();
   });
   document.querySelectorAll<HTMLButtonElement>('.chip').forEach((c) =>
-    c.addEventListener('click', () => { writeLen('batten', parseFloat(c.dataset.in!)); compute(); }),
+    c.addEventListener('click', () => { untouched = false; writeLen('batten', parseFloat(c.dataset.in!)); compute(); }),
   );
-  $('count-up').addEventListener('click', () => { $('count').value = String((readCount('count') || 0) + 1); compute(); });
-  $('count-down').addEventListener('click', () => { $('count').value = String(Math.max(1, (readCount('count') || 2) - 1)); compute(); });
+  $('count-up').addEventListener('click', () => { untouched = false; $('count').value = String((readCount('count') || 0) + 1); compute(); });
+  $('count-down').addEventListener('click', () => { untouched = false; $('count').value = String(Math.max(1, (readCount('count') || 2) - 1)); compute(); });
 
   new IntersectionObserver((entries) => { toolVisible = entries[0].isIntersecting; updateSticky(); }).observe(el('tool'));
+  // A pre-set page starts from its own numbers (inches). A shared link in the address hash wins over them.
+  function applyPreset() {
+    try {
+      const raw = el('tool').dataset.preset;
+      if (!raw) return;
+      const pr = JSON.parse(raw);
+      for (const g of ['width', 'height', 'batten']) if (pr[g] > 0) writeLen(g, pr[g]);
+      if (pr.mode === 'gap') {
+        (form.querySelector('input[name="mode"][value="gap"]') as HTMLInputElement).checked = true;
+        writeLen('gap', pr.targetGap);
+      }
+      if (pr.count) $('count').value = String(pr.count);
+      if (pr.ends === false) $('ends').checked = false;
+      if (pr.rails) { $('rails-on').checked = true; $('rail-count').value = String(pr.rails.count); writeLen('rail', pr.rails.width); }
+      if (pr.endWidth) { $('wide-on').checked = true; writeLen('endb', pr.endWidth); }
+    } catch {}
+  }
+  applyPreset();
+  if (location.hash) untouched = false;
   readHash();
   syncVisibility();
   compute();

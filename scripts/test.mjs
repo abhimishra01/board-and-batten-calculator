@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { parseInches, parseFeet, parseNumber, MAX_COUNT, formatInches, formatFeetInches, formatCm, solveByCount, solveByGap, positions, packBoards, plan, STOCK_IMPERIAL } from '../src/lib/layout.mjs';
+import { parseInches, parseFeet, parseNumber, MAX_COUNT, formatInches, formatFeetInches, formatCm, solveByCount, solveByGap, positions, anchoredMarks, packBoards, plan, STOCK_IMPERIAL } from '../src/lib/layout.mjs';
 
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok', name); };
@@ -181,5 +181,48 @@ t('plan: best board length', () => {
   const q = plan({ width: 144, height: 100, batten: 2.5, mode: 'count', count: 4, withEnds: true });
   assert.equal(q.buy[0].boards, null);
   assert.equal(q.best.stock, 120);
+});
+t('end battens with their own width fill the wall', () => {
+  const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, endWidth: 3.5 });
+  assert.ok(p.ok);
+  near(p.gap, (144 - 8 * 2.5 - 7) / 9);
+  near(p.marks[0].right - p.marks[0].left, 3.5);
+  near(p.marks[1].right - p.marks[1].left, 2.5);
+  near(p.marks[9].right, 144);
+  near(p.marks[1].left - p.marks[0].right, p.gap);
+  const g = plan({ width: 144, height: 96, batten: 2.5, mode: 'gap', targetGap: 12, withEnds: true, endWidth: 3.5 });
+  assert.ok(g.ok);
+  near(g.marks[g.count - 1].right, 144);
+});
+t('end width is ignored without end battens', () => {
+  const a = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: false, endWidth: 3.5 });
+  const b = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: false });
+  near(a.gap, b.gap);
+});
+t('anchored layout: a batten centered on the window', () => {
+  const m = anchoredMarks(144, 2.5, 13.25, 64, 'batten');
+  assert.ok(m.some((x) => Math.abs(x.center - 64) < 1e-9));
+  for (const x of m) assert.ok(x.left >= 0 && x.right <= 144 + 1e-9);
+  for (let i = 1; i < m.length; i++) near(m[i].left - m[i - 1].right, 13.25);
+});
+t('anchored layout: a gap centered on the window', () => {
+  const m = anchoredMarks(144, 2.5, 13.25, 72, 'gap');
+  const mid = m.findIndex((x) => x.center > 72);
+  near((m[mid].left + m[mid - 1].right) / 2, 72);
+});
+t('plan: anchor keeps the gap and reports end spaces', () => {
+  const base = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true });
+  const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, anchor: { on: true, x: 64, kind: 'gap' } });
+  assert.ok(p.ok);
+  near(p.gap, base.gap);
+  assert.ok(p.anchor.left >= 0 && p.anchor.right >= 0);
+  near(p.anchor.left + p.anchor.right + p.count * 2.5 + (p.count - 1) * p.gap, 144);
+  assert.equal(plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, anchor: { on: true, x: 200, kind: 'gap' } }).field, 'anchor');
+});
+t('plan: anchor warns about a sliver at the end', () => {
+  const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, anchor: { on: true, x: 64, kind: 'batten' } });
+  assert.ok(p.ok);
+  const small = Math.min(p.anchor.left, p.anchor.right) < 1.25;
+  assert.equal(p.warnings.some((w) => w.includes('end space')), small);
 });
 console.log(`\n${n} tests passed`);

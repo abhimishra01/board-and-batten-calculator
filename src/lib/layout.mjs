@@ -85,19 +85,22 @@ export function formatCm(inches) {
 
 // Space `count` strips of width `w` along `length`.
 // withEnds true: a strip at each end, count-1 gaps. false: a gap at each end, count+1 gaps.
-export function solveByCount(length, w, count, withEnds) {
+// `endW` is an optional width for the two end battens (used only with end battens and 2 or more battens).
+export function solveByCount(length, w, count, withEnds, endW = w) {
   const gaps = withEnds ? count - 1 : count + 1;
-  const gap = gaps > 0 ? (length - count * w) / gaps : NaN;
+  const extra = withEnds && count >= 2 ? 2 * (endW - w) : 0;
+  const gap = gaps > 0 ? (length - count * w - extra) / gaps : NaN;
   return { count, gap, gaps };
 }
 
 // Pick the count whose gap is closest to the target gap.
-export function solveByGap(length, w, target, withEnds) {
-  const raw = withEnds ? (length + target) / (w + target) : (length - target) / (w + target);
+export function solveByGap(length, w, target, withEnds, endW = w) {
+  const extra = withEnds ? 2 * (endW - w) : 0;
+  const raw = withEnds ? (length + target - extra) / (w + target) : (length - target) / (w + target);
   const a = Math.max(1, Math.floor(raw));
   const b = a + 1;
-  const ra = solveByCount(length, w, a, withEnds);
-  const rb = solveByCount(length, w, b, withEnds);
+  const ra = solveByCount(length, w, a, withEnds, endW);
+  const rb = solveByCount(length, w, b, withEnds, endW);
   const okA = Number.isFinite(ra.gap) && ra.gap >= -EPS;
   const okB = Number.isFinite(rb.gap) && rb.gap >= -EPS;
   if (okA && okB) return Math.abs(ra.gap - target) <= Math.abs(rb.gap - target) ? ra : rb;
@@ -106,12 +109,30 @@ export function solveByGap(length, w, target, withEnds) {
 
 // Positions of each strip along an axis, measured from 0, unrounded. Walls use left to right.
 // Rails use the same fields from the floor up: `left` is the bottom edge, `right` the top edge.
-export function positions(length, w, count, gap, withEnds) {
+export function positions(length, w, count, gap, withEnds, endW = w) {
   const out = [];
-  const start = withEnds ? 0 : gap;
+  let left = withEnds ? 0 : gap;
   for (let i = 0; i < count; i++) {
-    const left = start + i * (w + gap);
-    out.push({ n: i + 1, left, center: left + w / 2, right: left + w });
+    const bw = withEnds && count >= 2 && (i === 0 || i === count - 1) ? endW : w;
+    out.push({ n: i + 1, left, center: left + bw / 2, right: left + bw });
+    left += bw + gap;
+  }
+  return out;
+}
+
+// Anchored layout: keep the gap and batten width, and fix one batten (kind 'batten') or one gap
+// (kind 'gap') on the point `x` from the left edge. Only whole battens that fit inside the wall are kept.
+// The two end spaces are usually not equal.
+export function anchoredMarks(length, w, gap, x, kind) {
+  const pitch = w + gap;
+  const shift = kind === 'gap' ? pitch / 2 : 0;
+  const out = [];
+  const kMin = Math.floor((0 - x + shift) / pitch) - 1;
+  const kMax = Math.ceil((length - x + shift) / pitch) + 1;
+  for (let k = kMin; k <= kMax; k++) {
+    const center = x - shift + k * pitch;
+    const left = center - w / 2;
+    if (left >= -EPS && left + w <= length + EPS) out.push({ n: out.length + 1, left: Math.max(0, left), center, right: left + w });
   }
   return out;
 }
@@ -149,12 +170,14 @@ export function packBoards(pieces, stock, kerf = KERF) {
 // Whole plan. input: {width, height, batten, mode:'count'|'gap', count, targetGap, withEnds,
 // rails:{on, count, width}, metric}
 // Returns { ok:false, errors:[text], field } or
-// { ok:true, count, gap, gapCount, pitch, marks, rails, linear, buy, best, warnings }.
+// { ok:true, count, gap, gapCount, pitch, marks, rails, linear, buy, best, warnings, anchor, endWidth }.
+// Optional input: endWidth (end battens wider or narrower than the rest), anchor {on, x, kind:'batten'|'gap'}.
 // `field` names the input to blame (width, height, batten, gap, count, rail-count, rail).
 // `best` is the entry of `buy` with the fewest boards, then the least waste (null if none fits).
 // Rails always sit flush with the floor and the ceiling (one rail sits in the middle).
 export function plan(input) {
   const { width, height, batten, mode, withEnds } = input;
+  const endW = withEnds && input.endWidth > 0 ? input.endWidth : batten;
   const fail = (text, field) => ({ ok: false, errors: [text], field });
   if (!(width > 0)) return fail('Enter the wall width.', 'width');
   if (!(batten > 0)) return fail('Enter the batten width.', 'batten');
@@ -163,11 +186,11 @@ export function plan(input) {
   let v;
   if (mode === 'gap') {
     if (!(input.targetGap > 0)) return fail('Enter the gap you want.', 'gap');
-    v = solveByGap(width, batten, input.targetGap, withEnds);
+    v = solveByGap(width, batten, input.targetGap, withEnds, endW);
   } else {
     if (!(input.count >= 1) || !Number.isInteger(input.count)) return fail('Enter how many battens you want (a whole number).', 'count');
     if (input.count > MAX_COUNT) return fail(`This tool handles up to ${MAX_COUNT} battens.`, 'count');
-    v = solveByCount(width, batten, input.count, withEnds);
+    v = solveByCount(width, batten, input.count, withEnds, endW);
   }
   if (!Number.isFinite(v.gap)) return fail('With one batten and no end gaps there is nothing to space. Add a batten or turn on end battens.', 'count');
   if (Math.abs(v.gap) < EPS) v.gap = 0;
@@ -176,8 +199,17 @@ export function plan(input) {
     return fail(max < 1 ? 'The batten is wider than the wall.' : `Those battens are wider than the wall. The most that fit side by side is ${max}.`, mode === 'gap' ? 'gap' : 'count');
   }
   if (v.count > MAX_COUNT) return fail(`That gap needs more than ${MAX_COUNT} battens. Try a larger gap.`, 'gap');
-  const marks = positions(width, batten, v.count, v.gap, withEnds);
+  let marks = positions(width, batten, v.count, v.gap, withEnds, endW);
   const pitch = batten + v.gap;
+  let anchor = null;
+  if (input.anchor && input.anchor.on) {
+    const x = input.anchor.x;
+    if (!(x > 0) || x >= width) return fail('The feature position must be inside the wall width.', 'anchor');
+    marks = anchoredMarks(width, batten, v.gap, x, input.anchor.kind === 'gap' ? 'gap' : 'batten');
+    if (!marks.length) return fail('No whole batten fits with the layout anchored there. Try another position.', 'anchor');
+    v = { ...v, count: marks.length, gaps: marks.length - 1 };
+    anchor = { left: marks[0].left, right: width - marks[marks.length - 1].right, kind: input.anchor.kind === 'gap' ? 'gap' : 'batten' };
+  }
 
   let rails = null;
   if (input.rails && input.rails.on) {
@@ -205,5 +237,6 @@ export function plan(input) {
   const warnings = [];
   if (v.gap < batten * 0.5 && v.gap > 0) warnings.push('The gap is narrower than half a batten. The wall will look dense.');
   if (v.gap === 0) warnings.push('The gap is zero. The battens touch.');
-  return { ok: true, count: v.count, gap: v.gap, gapCount: v.gaps, pitch, marks, rails, linear, buy, best, warnings };
+  if (anchor && Math.min(anchor.left, anchor.right) < batten * 0.5) warnings.push('One end space is narrower than half a batten. Move the feature position a little, or change the batten count.');
+  return { ok: true, count: v.count, gap: v.gap, gapCount: v.gaps, pitch, marks, rails, linear, buy, best, warnings, anchor, endWidth: endW };
 }
