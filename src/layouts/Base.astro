@@ -11,9 +11,9 @@ const { rawTitle, title, description = site.description, jsonLd = [], noindex = 
 // The GitHub Pages copy is a preview: keep it out of search results. Normal builds stay indexable.
 const isPreview = import.meta.env.BASE_URL.replace(/\/+$/, "") !== "";
 const fullTitle = rawTitle ? rawTitle : title ? `${title} | ${site.name}` : `${site.name}: ${site.keyword} (${site.tagline})`;
-const base = `https://${site.domain}`;
+const base = site.origin;
 // Canonical always uses the real domain, even when the site is served from a base path.
-const canonical = new URL(stripBase(Astro.url.pathname), base).href;
+const canonical = base + stripBase(Astro.url.pathname);
 // The share image comes from wherever this build is served, so it loads on GitHub Pages too.
 const image = site.ogImage ? new URL(href(site.ogImage), Astro.site).href : '';
 ---
@@ -31,7 +31,7 @@ const image = site.ogImage ? new URL(href(site.ogImage), Astro.site).href : '';
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content={site.brand} />
-    {(noindex || isPreview) && <meta name="robots" content="noindex" />}
+    {noindex || (isPreview && !site.bingemind) ? <meta name="robots" content="noindex" /> : site.bingemind && <meta name="robots" content="index,follow" />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <link rel="icon" href={href('/favicon-32.png')} sizes="32x32" type="image/png" />
