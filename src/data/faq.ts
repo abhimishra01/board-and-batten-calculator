@@ -1,0 +1,11 @@
+// FAQ items. Rendered on the home page AND output as FAQPage JSON-LD.
+export const faq = [
+  { q: 'How far apart should board and batten be?', a: 'Most walls use gaps of 8 to 16 inches between battens. 12 inches is a common choice. A wider gap looks calmer and more modern. A narrower gap looks more formal. Try a few batten counts in the calculator and compare the drawings.' },
+  { q: 'How do I calculate board and batten spacing?', a: 'Subtract the total width of all battens from the wall width. Divide what is left by the number of gaps. With a batten at each end, the gaps are one fewer than the battens. For a 144 inch wall with ten 2 1/2 inch battens, the gap is (144 - 25) / 9, which is 13 1/4 inches.' },
+  { q: 'What is on-center spacing?', a: 'It is the distance from the center of one batten to the center of the next. It equals the batten width plus the gap. Marking centers is the easiest way to place battens, because you measure from one fixed point on the wall.' },
+  { q: 'Should I put a batten at each end of the wall?', a: 'Most people do. A batten in the corner hides the joint and gives the wall a finished edge. Some designers leave a gap at each end instead, so the wall looks as if it floats. The calculator handles both. Switch the option and compare.' },
+  { q: 'How many boards do I need for a board and batten wall?', a: 'It depends on the wall height and the board length. The calculator packs all your pieces into 8, 10 and 12 foot boards, allows 1/8 inch for each cut, and shows the number for each length. It highlights the one with the fewest boards.' },
+  { q: 'What is the real width of a 1x3 board?', a: 'A 1x3 is 2 1/2 inches wide and a 1x4 is 3 1/2 inches. A 1x2 is 1 1/2 inches. The name is the size before the wood is dried and planed. Measure your boards with a tape before you enter the width.' },
+  { q: 'Can I use metric units?', a: 'Yes. Switch to Metric at the top of the tool. Enter sizes in centimeters. Marks and gaps appear to the nearest millimeter, and board lengths change to 2.4, 3.0 and 3.6 meters.' },
+  { q: 'Is the spacing exact if my wall is not square?', a: 'The math is exact for the width you enter. Walls are often a little off, so measure at the top, middle and bottom and use the smallest width. Mark the batten centers along a level line instead of along the floor.' },
+];

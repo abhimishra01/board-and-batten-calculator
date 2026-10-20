@@ -1,0 +1,425 @@
+---
+const fracs = Array.from({ length: 16 }, (_, i) => i);
+const fracLabel = (i: number) => {
+  if (!i) return '0';
+  let n = i, d = 16;
+  while (n % 2 === 0) { n /= 2; d /= 2; }
+  return `${n}/${d}`;
+};
+// Length fields: feet, inches, fraction in imperial; one cm field in metric.
+const groups = [
+  { id: 'width', label: 'Wall width', ft: '12', inch: '0', frac: 0 },
+  { id: 'height', label: 'Wall height', ft: '8', inch: '0', frac: 0 },
+];
+---
+<section id="tool" aria-label="Board and batten calculator" class="rounded-2xl border border-line bg-card p-4 sm:shadow-[6px_6px_0_0_var(--line)] sm:p-6">
+  <p class="print-title hidden text-lg font-bold">Board and batten layout</p>
+  <div class="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+    <form id="form" class="no-print grid content-start gap-5" autocomplete="off" onsubmit="return false">
+      <div class="flex items-center justify-between gap-3">
+        <span class="lbl mb-0" id="units-l">Units</span>
+        <div class="seg" role="radiogroup" aria-labelledby="units-l">
+          <label><input class="sr-only" type="radio" name="units" value="in" checked /><span>Feet and inches</span></label>
+          <label><input class="sr-only" type="radio" name="units" value="cm" /><span>Metric</span></label>
+        </div>
+      </div>
+
+      {groups.map((g) => (
+        <fieldset class="m-0 min-w-0 border-0 p-0" data-len={g.id}>
+          <legend class="lbl">{g.label}</legend>
+          <div class="grid grid-cols-[1fr_1fr_1fr] gap-2 imp">
+            <div><label class="sr-only" for={`${g.id}-ft`}>{g.label}, feet</label><div class="relative"><input class="fld pr-9" id={`${g.id}-ft`} inputmode="decimal" value={g.ft} /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">ft</span></div></div>
+            <div><label class="sr-only" for={`${g.id}-in`}>{g.label}, inches</label><div class="relative"><input class="fld pr-9" id={`${g.id}-in`} inputmode="decimal" value={g.inch} /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">in</span></div></div>
+            <div><label class="sr-only" for={`${g.id}-fr`}>{g.label}, fraction of an inch</label><select class="fld px-2" id={`${g.id}-fr`}>{fracs.map((i) => <option value={i}>{fracLabel(i)}</option>)}</select></div>
+          </div>
+          <div class="met hidden"><label class="sr-only" for={`${g.id}-cm`}>{g.label}, centimeters</label><div class="relative"><input class="fld pr-10" id={`${g.id}-cm`} inputmode="decimal" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">cm</span></div></div>
+        </fieldset>
+      ))}
+
+      <fieldset class="m-0 min-w-0 border-0 p-0" data-len="batten">
+        <legend class="lbl">Batten width</legend>
+        <div class="mb-2 flex flex-wrap gap-2" role="group" aria-label="Common batten sizes">
+          <button type="button" class="chip" data-in="1.5">1x2</button>
+          <button type="button" class="chip" data-in="2.5">1x3</button>
+          <button type="button" class="chip" data-in="3.5">1x4</button>
+        </div>
+        <div class="grid grid-cols-[1fr_1fr] gap-2 imp">
+          <div><label class="sr-only" for="batten-in">Batten width, inches</label><div class="relative"><input class="fld pr-9" id="batten-in" inputmode="decimal" value="2" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">in</span></div></div>
+          <div><label class="sr-only" for="batten-fr">Batten width, fraction of an inch</label><select class="fld px-2" id="batten-fr">{fracs.map((i) => <option value={i} selected={i === 8}>{fracLabel(i)}</option>)}</select></div>
+        </div>
+        <div class="met hidden"><label class="sr-only" for="batten-cm">Batten width, centimeters</label><div class="relative"><input class="fld pr-10" id="batten-cm" inputmode="decimal" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">cm</span></div></div>
+        <p class="mt-1 text-xs text-muted">A 1x3 board is 2 1/2 in wide, a 1x4 is 3 1/2 in.</p>
+      </fieldset>
+
+      <fieldset class="m-0 min-w-0 border-0 p-0">
+        <legend class="lbl">I know</legend>
+        <div class="seg" role="radiogroup" aria-label="What you know">
+          <label><input class="sr-only" type="radio" name="mode" value="count" checked /><span>How many battens</span></label>
+          <label><input class="sr-only" type="radio" name="mode" value="gap" /><span>The gap I want</span></label>
+        </div>
+        <div id="mode-count" class="mt-3 flex items-center gap-2">
+          <button type="button" class="step" id="count-down" aria-label="One fewer batten">&minus;</button>
+          <div class="grow"><label class="sr-only" for="count">Number of battens</label><input class="fld text-center text-lg font-bold" id="count" inputmode="numeric" value="10" /></div>
+          <button type="button" class="step" id="count-up" aria-label="One more batten">+</button>
+        </div>
+        <div id="mode-gap" class="mt-3 hidden" data-len="gap">
+          <div class="grid grid-cols-[1fr_1fr] gap-2 imp">
+            <div><label class="sr-only" for="gap-in">Gap, inches</label><div class="relative"><input class="fld pr-9" id="gap-in" inputmode="decimal" value="12" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">in</span></div></div>
+            <div><label class="sr-only" for="gap-fr">Gap, fraction of an inch</label><select class="fld px-2" id="gap-fr">{fracs.map((i) => <option value={i}>{fracLabel(i)}</option>)}</select></div>
+          </div>
+          <div class="met hidden"><label class="sr-only" for="gap-cm">Gap, centimeters</label><div class="relative"><input class="fld pr-10" id="gap-cm" inputmode="decimal" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">cm</span></div></div>
+          <p class="mt-1 text-xs text-muted">The tool picks the batten count that comes closest to this gap, then makes every gap equal.</p>
+        </div>
+      </fieldset>
+
+      <div>
+        <label class="chk"><input type="checkbox" id="ends" checked /> Batten at each end of the wall</label>
+        <label class="chk"><input type="checkbox" id="rails-on" /> Add horizontal rails</label>
+      </div>
+
+      <fieldset id="rails" class="m-0 hidden min-w-0 gap-3 rounded-xl border border-line p-3" data-len="rail">
+        <legend class="lbl px-1">Rails</legend>
+        <div class="grid gap-3">
+          <div><label class="lbl" for="rail-count">Number of rails</label><input class="fld" id="rail-count" inputmode="numeric" value="2" /></div>
+          <div>
+            <span class="lbl" id="rail-w-l">Rail width</span>
+            <div class="grid grid-cols-[1fr_1fr] gap-2 imp" role="group" aria-labelledby="rail-w-l">
+              <div><label class="sr-only" for="rail-in">Rail width, inches</label><div class="relative"><input class="fld pr-9" id="rail-in" inputmode="decimal" value="3" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">in</span></div></div>
+              <div><label class="sr-only" for="rail-fr">Rail width, fraction of an inch</label><select class="fld px-2" id="rail-fr">{fracs.map((i) => <option value={i} selected={i === 8}>{fracLabel(i)}</option>)}</select></div>
+            </div>
+            <div class="met hidden"><label class="sr-only" for="rail-cm">Rail width, centimeters</label><div class="relative"><input class="fld pr-10" id="rail-cm" inputmode="decimal" /><span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted" aria-hidden="true">cm</span></div></div>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-muted">Rails run the full width. They are spaced evenly from the floor to the ceiling. One rail sits in the middle.</p>
+      </fieldset>
+    </form>
+
+    <div id="results" class="min-w-0 min-h-[34rem]">
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <p id="msg" class="hidden rounded-xl border border-[#b3261e] bg-[color-mix(in_oklab,#b3261e_8%,var(--card))] p-3 font-medium"></p>
+      </div>
+      <div id="out">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="col-span-2 rounded-xl bg-brand-soft p-4 sm:col-span-1">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Gap between battens</p>
+            <p id="r-gap" class="font-mono text-2xl font-bold tabular-nums text-brand-ink sm:text-3xl" aria-live="polite">&nbsp;</p>
+            <p id="r-gap-dec" class="text-sm text-muted tabular-nums">&nbsp;</p>
+          </div>
+          <div class="rounded-xl bg-brand-soft p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Battens</p>
+            <p id="r-count" class="font-mono text-2xl sm:text-3xl font-bold tabular-nums text-brand-ink">&nbsp;</p>
+            <p class="text-sm text-muted" id="r-count-sub">&nbsp;</p>
+          </div>
+          <div class="rounded-xl bg-brand-soft p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Center to center</p>
+            <p id="r-pitch" class="font-mono text-2xl sm:text-3xl font-bold tabular-nums text-brand-ink">&nbsp;</p>
+            <p class="text-sm text-muted">between marks</p>
+          </div>
+        </div>
+        <ul id="r-warn" class="mt-3 list-disc pl-5 text-sm text-muted"></ul>
+
+        <figure class="mt-5 m-0">
+          <div id="draw" class="overflow-hidden rounded-xl border border-line bg-paper"></div>
+          <figcaption class="mt-1 text-xs text-muted">Drawn to scale. Numbers match the mark list below.</figcaption>
+        </figure>
+
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
+          <div>
+            <h3 class="mb-1 text-base font-bold">Marks from the left</h3>
+            <p class="mb-2 text-sm text-muted">Measure from the left edge of the wall. Make a pencil mark at each center, then set each batten on its mark.</p>
+            <div class="max-h-96 overflow-auto rounded-xl border border-line">
+              <table class="tbl" id="marks"><thead><tr><th scope="col">#</th><th scope="col">Center</th><th scope="col">Left edge</th></tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+          <div>
+            <div id="rails-out" class="hidden mb-6">
+              <h3 class="mb-1 text-base font-bold">Rail marks from the floor</h3>
+              <p class="mb-2 text-sm text-muted">Measure up from the floor to the center of each rail.</p>
+              <div class="overflow-auto rounded-xl border border-line"><table class="tbl" id="rail-marks"><thead><tr><th scope="col">#</th><th scope="col">Center</th><th scope="col">Bottom edge</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <h3 class="mb-1 text-base font-bold">Cut list</h3>
+            <ul id="cutlist" class="mb-4 list-disc pl-5"></ul>
+            <h3 class="mb-1 text-base font-bold">Boards to buy</h3>
+            <p class="mb-2 text-sm text-muted" id="buy-note"></p>
+            <div class="overflow-auto rounded-xl border border-line"><table class="tbl" id="buy"><thead><tr><th scope="col">Board length</th><th scope="col">Boards</th><th scope="col">Waste</th></tr></thead><tbody></tbody></table></div>
+          </div>
+        </div>
+
+        <div class="no-print mt-6 flex flex-wrap gap-3">
+          <button type="button" class="btn btn-primary" id="copy">Copy cut list and marks</button>
+          <button type="button" class="btn" id="print">Print</button>
+          <span id="copy-note" class="self-center text-sm text-muted" role="status"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import {
+    parseInches, formatInches, formatFeetInches, formatCm, plan, MM_PER_IN,
+  } from '../lib/layout.mjs';
+
+  const $ = <T extends HTMLElement = HTMLInputElement>(id: string) => document.getElementById(id) as T;
+  const form = $<HTMLFormElement>('form');
+  const state = { metric: false };
+
+  // ---- read and write length fields ----
+  const val = (id: string) => $(id)?.value ?? '';
+  function readLen(id: string): number {
+    if (state.metric) {
+      const cm = parseFloat(val(`${id}-cm`).replace(',', '.'));
+      return Number.isFinite(cm) ? cm * 10 / MM_PER_IN : NaN;
+    }
+    const ftEl = document.getElementById(`${id}-ft`);
+    const ft = ftEl ? (val(`${id}-ft`).trim() === '' ? 0 : parseFloat(val(`${id}-ft`).replace(',', '.'))) : 0;
+    const inTxt = val(`${id}-in`).trim();
+    const inch = inTxt === '' ? 0 : parseInches(inTxt);
+    const fr = parseInt(val(`${id}-fr`) || '0', 10) / 16;
+    const t = ft * 12 + inch + fr;
+    return Number.isFinite(t) ? t : NaN;
+  }
+  function writeLen(id: string, inches: number) {
+    if (!Number.isFinite(inches)) return;
+    if (state.metric) { $(`${id}-cm`).value = String(Math.round(inches * MM_PER_IN) / 10); return; }
+    const sixteenths = Math.round(inches * 16);
+    const whole = Math.floor(sixteenths / 16);
+    const fr = sixteenths % 16;
+    if (document.getElementById(`${id}-ft`)) {
+      $(`${id}-ft`).value = String(Math.floor(whole / 12));
+      $(`${id}-in`).value = String(whole % 12);
+    } else $(`${id}-in`).value = String(whole);
+    $(`${id}-fr`).value = String(fr);
+  }
+  const groupIds = ['width', 'height', 'batten', 'gap', 'rail'];
+
+  function setUnits(metric: boolean) {
+    if (metric === state.metric) return;
+    const saved: Record<string, number> = {};
+    for (const g of groupIds) saved[g] = readLen(g);
+    state.metric = metric;
+    document.querySelectorAll('.imp').forEach((e) => e.classList.toggle('hidden', metric));
+    document.querySelectorAll('.met').forEach((e) => e.classList.toggle('hidden', !metric));
+    for (const g of groupIds) writeLen(g, saved[g]);
+  }
+
+  // ---- drawing ----
+  const NS = 'http://www.w3.org/2000/svg';
+  const f1 = (n: number) => (Math.round(n * 100) / 100).toString();
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function draw(p: any, W: number, H: number, b: number) {
+    const fs = Math.max(W, H) / 26;
+    const padL = fs * 2.2, padT = fs * 2, padR = fs * 0.8, padB = fs * 5.4;
+    const vbW = W + padL + padR, vbH = H + padT + padB;
+    const gapTxt = state.metric ? formatCm(p.gap) : formatInches(p.gap);
+    const totalTxt = state.metric ? formatCm(W) : formatFeetInches(W);
+    const heightTxt = state.metric ? formatCm(H) : formatFeetInches(H);
+    let s = `<svg xmlns="${NS}" viewBox="0 0 ${f1(vbW)} ${f1(vbH)}" width="100%" role="img" aria-label="Wall drawing to scale: ${p.count} battens with ${gapTxt} gaps" style="display:block;max-height:34rem" font-family="ui-sans-serif,system-ui,sans-serif">`;
+    s += `<g transform="translate(${f1(padL)} ${f1(padT)})">`;
+    s += `<rect x="0" y="0" width="${f1(W)}" height="${f1(H)}" fill="var(--card)" stroke="var(--ink)" stroke-width="${f1(fs * 0.08)}"/>`;
+    if (p.rails) {
+      for (const r of p.rails.marks) {
+        const y = H - r.right; // r.left is the bottom edge from the floor, r.right the top edge
+        s += `<rect x="0" y="${f1(y)}" width="${f1(W)}" height="${f1(p.rails.width)}" fill="var(--brand-ink)" opacity="0.4"/>`;
+      }
+    }
+    for (const m of p.marks) {
+      s += `<rect x="${f1(m.left)}" y="0" width="${f1(b)}" height="${f1(H)}" fill="var(--brand-ink)"/>`;
+    }
+    // number labels above
+    const k = Math.max(1, Math.ceil((fs * 1.7) / p.pitch));
+    for (const m of p.marks) {
+      if ((m.n - 1) % k === 0 || m.n === p.count) {
+        s += `<text x="${f1(m.centre)}" y="${f1(-fs * 0.55)}" font-size="${f1(fs * 0.85)}" text-anchor="middle" fill="var(--muted)">${m.n}</text>`;
+      }
+    }
+    // first gap dimension
+    const g0 = p.marks.length ? 0 : 0;
+    const gx1 = p.marks[0].left > 0 ? 0 : p.marks[0].right;
+    const gx2 = p.marks[0].left > 0 ? p.marks[0].left : (p.marks[1] ? p.marks[1].left : W);
+    const dy = H + fs * 1.4;
+    s += `<g stroke="var(--ink)" stroke-width="${f1(fs * 0.07)}" fill="none"><path d="M${f1(gx1)} ${f1(dy - fs * 0.35)}V${f1(dy + fs * 0.35)}M${f1(gx2)} ${f1(dy - fs * 0.35)}V${f1(dy + fs * 0.35)}M${f1(gx1)} ${f1(dy)}H${f1(gx2)}"/></g>`;
+    s += `<text x="${f1(gx2 + fs * 0.3)}" y="${f1(dy + fs * 0.32)}" font-size="${f1(fs * 0.85)}" fill="var(--ink)" font-weight="700">${esc(gapTxt)} gap</text>`;
+    // total width dimension
+    const dy2 = H + fs * 3.4;
+    s += `<g stroke="var(--muted)" stroke-width="${f1(fs * 0.07)}" fill="none"><path d="M0 ${f1(dy2 - fs * 0.4)}V${f1(dy2 + fs * 0.4)}M${f1(W)} ${f1(dy2 - fs * 0.4)}V${f1(dy2 + fs * 0.4)}M0 ${f1(dy2)}H${f1(W)}"/></g>`;
+    s += `<rect x="${f1(W / 2 - fs * 3.2)}" y="${f1(dy2 - fs * 0.6)}" width="${f1(fs * 6.4)}" height="${f1(fs * 1.2)}" fill="var(--paper)"/>`;
+    s += `<text x="${f1(W / 2)}" y="${f1(dy2 + fs * 0.3)}" font-size="${f1(fs * 0.85)}" text-anchor="middle" fill="var(--muted)">${esc(totalTxt)}</text>`;
+    // height dimension (left)
+    const dx = -fs * 1.1;
+    s += `<g stroke="var(--muted)" stroke-width="${f1(fs * 0.07)}" fill="none"><path d="M${f1(dx - fs * 0.35)} 0H${f1(dx + fs * 0.35)}M${f1(dx - fs * 0.35)} ${f1(H)}H${f1(dx + fs * 0.35)}M${f1(dx)} 0V${f1(H)}"/></g>`;
+    s += `<text transform="translate(${f1(dx - fs * 0.25)} ${f1(H / 2)}) rotate(-90)" font-size="${f1(fs * 0.85)}" text-anchor="middle" fill="var(--muted)" paint-order="stroke" stroke="var(--paper)" stroke-width="${f1(fs * 0.5)}">${esc(heightTxt)}</text>`;
+    s += `</g></svg>`;
+    $<HTMLElement>('draw').innerHTML = s;
+  }
+
+  // ---- results ----
+  let last: any = null;
+  let lastIn: any = null;
+  const lenFmt = (x: number) => (state.metric ? formatCm(x) : formatFeetInches(x));
+  const gapFmt = (x: number) => (state.metric ? formatCm(x) : formatInches(x));
+  const row = (cells: string[], cls = '') => `<tr class="${cls}">${cells.map((c, i) => (i === 0 ? `<th scope="row" class="px-2 py-1.5 text-left text-[0.95rem] font-semibold normal-case tracking-normal text-ink">${c}</th>` : `<td>${c}</td>`)).join('')}</tr>`;
+
+  function stockLabel(inches: number) {
+    return state.metric ? `${(Math.round(inches * MM_PER_IN / 100) / 10).toFixed(1)} m` : `${Math.round(inches / 12)} ft`;
+  }
+
+  function showError(text: string) {
+    const msg = $<HTMLElement>('msg');
+    msg.textContent = text;
+    msg.classList.toggle('hidden', !text);
+    $<HTMLElement>('out').style.opacity = text ? '0.35' : '1';
+  }
+
+  function compute() {
+    const mode = (form.querySelector('input[name="mode"]:checked') as HTMLInputElement).value as 'count' | 'gap';
+    const input = {
+      width: readLen('width'),
+      height: readLen('height'),
+      batten: readLen('batten'),
+      mode,
+      count: parseInt(val('count'), 10),
+      targetGap: readLen('gap'),
+      withEnds: $('ends').checked,
+      metric: state.metric,
+      rails: { on: $('rails-on').checked, count: parseInt(val('rail-count'), 10), width: readLen('rail') },
+    };
+    lastIn = input;
+    const p = plan(input);
+    if (!p.ok) { showError(p.errors[0]); return; }
+    showError('');
+    last = p;
+
+    $<HTMLElement>('r-gap').textContent = gapFmt(p.gap);
+    $<HTMLElement>('r-gap-dec').textContent = state.metric ? `${(Math.round(p.gap * MM_PER_IN * 10) / 10)} mm` : `${(Math.round(p.gap * 1000) / 1000)} in exact`;
+    $<HTMLElement>('r-count').textContent = String(p.count);
+    $<HTMLElement>('r-count-sub').textContent = `${p.gapCount} equal gaps`;
+    $<HTMLElement>('r-pitch').textContent = state.metric ? formatCm(p.pitch) : formatInches(p.pitch);
+    $<HTMLElement>('r-warn').innerHTML = p.warnings.map((w: string) => `<li>${esc(w)}</li>`).join('');
+
+    draw(p, input.width, input.height, input.batten);
+
+    $('marks').querySelector('tbody')!.innerHTML = p.marks
+      .map((m: any) => row([String(m.n), `<strong>${lenFmt(m.centre)}</strong>`, lenFmt(m.left)]))
+      .join('');
+    const ro = $<HTMLElement>('rails-out');
+    ro.classList.toggle('hidden', !p.rails);
+    if (p.rails) {
+      $('rail-marks').querySelector('tbody')!.innerHTML = p.rails.marks
+        .map((m: any) => row([String(m.n), `<strong>${lenFmt(m.centre)}</strong>`, lenFmt(m.left)]))
+        .join('');
+    }
+
+    const cl: string[] = [`${p.count} vertical ${p.count === 1 ? 'batten' : 'battens'} at ${lenFmt(input.height)}`];
+    if (p.rails) cl.push(`${p.rails.count} horizontal ${p.rails.count === 1 ? 'rail' : 'rails'} at ${lenFmt(input.width)}`);
+    const linear = state.metric ? `${(Math.round(p.linear * 0.0254 * 10) / 10)} m` : `${(Math.round(p.linear / 12 * 10) / 10)} linear ft`;
+    cl.push(`Total: ${linear}`);
+    $<HTMLElement>('cutlist').innerHTML = cl.map((c) => `<li>${esc(c)}</li>`).join('');
+
+    // best option: fewest boards, then least waste
+    const ok = p.buy.filter((b: any) => b.boards !== null);
+    let best: any = null;
+    for (const b of ok) if (!best || b.boards < best.boards || (b.boards === best.boards && b.waste < best.waste)) best = b;
+    $('buy').querySelector('tbody')!.innerHTML = p.buy
+      .map((b: any) => b.boards === null
+        ? row([stockLabel(b.stock), 'Too short', '&ndash;'])
+        : row([stockLabel(b.stock), String(b.boards), `${Math.round(b.waste * 100)}%`], b === best ? 'best' : ''))
+      .join('');
+    $<HTMLElement>('buy-note').textContent = best
+      ? `Best fit: ${best.boards} boards of ${stockLabel(best.stock)}. Counts include ${state.metric ? 'a 3 mm' : 'a 1/8 in'} saw cut. Buy one extra for mistakes.`
+      : 'No stock length is long enough for the battens. Pick shorter battens or splice them.';
+    writeHash();
+  }
+
+  // ---- copy ----
+  function copyText(): string {
+    if (!last || !lastIn) return '';
+    const p = last;
+    const L: string[] = [];
+    L.push(`Board and batten layout`);
+    L.push(`Wall ${lenFmt(lastIn.width)} wide x ${lenFmt(lastIn.height)} high. Batten ${gapFmt(lastIn.batten)} wide.`);
+    L.push(`${p.count} battens, gap ${gapFmt(p.gap)}, center to center ${gapFmt(p.pitch)}${lastIn.withEnds ? ', battens at both ends' : ', gap at both ends'}.`);
+    L.push('');
+    L.push('Marks (center, from the left):');
+    for (const m of p.marks) L.push(`${m.n}. ${lenFmt(m.centre)}`);
+    if (p.rails) {
+      L.push('');
+      L.push(`Rail marks (center, from the floor), rail ${gapFmt(p.rails.width)} wide:`);
+      for (const m of p.rails.marks) L.push(`${m.n}. ${lenFmt(m.centre)}`);
+    }
+    L.push('');
+    L.push('Cut list:');
+    L.push(`${p.count} x ${lenFmt(lastIn.height)} (batten)`);
+    if (p.rails) L.push(`${p.rails.count} x ${lenFmt(lastIn.width)} (rail)`);
+    L.push('');
+    L.push('Boards to buy:');
+    for (const b of p.buy) L.push(b.boards === null ? `${stockLabel(b.stock)}: too short` : `${stockLabel(b.stock)}: ${b.boards} boards`);
+    return L.join('\n');
+  }
+  $('copy').addEventListener('click', async () => {
+    const note = $<HTMLElement>('copy-note');
+    const text = copyText();
+    try { await navigator.clipboard.writeText(text); note.textContent = 'Copied.'; }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); note.textContent = 'Copied.'; } catch { note.textContent = 'Could not copy. Select the tables and copy by hand.'; }
+      ta.remove();
+    }
+    setTimeout(() => (note.textContent = ''), 2500);
+  });
+  $('print').addEventListener('click', () => window.print());
+
+  // ---- share link in the address hash ----
+  const ids = ['width-ft', 'width-in', 'width-fr', 'width-cm', 'height-ft', 'height-in', 'height-fr', 'height-cm', 'batten-in', 'batten-fr', 'batten-cm', 'gap-in', 'gap-fr', 'gap-cm', 'count', 'rail-count', 'rail-in', 'rail-fr', 'rail-cm'];
+  function writeHash() {
+    try {
+      const q = new URLSearchParams();
+      q.set('u', state.metric ? 'cm' : 'in');
+      q.set('m', (form.querySelector('input[name="mode"]:checked') as HTMLInputElement).value);
+      q.set('e', $('ends').checked ? '1' : '0');
+      q.set('r', $('rails-on').checked ? '1' : '0');
+      for (const id of ids) q.set(id, val(id));
+      history.replaceState(null, '', '#' + q.toString());
+    } catch {}
+  }
+  function readHash() {
+    try {
+      if (!location.hash) return;
+      const q = new URLSearchParams(location.hash.slice(1));
+      if (q.get('u') === 'cm') { (form.querySelector('input[name="units"][value="cm"]') as HTMLInputElement).checked = true; state.metric = false; setUnits(true); }
+      const m = q.get('m');
+      if (m === 'gap' || m === 'count') (form.querySelector(`input[name="mode"][value="${m}"]`) as HTMLInputElement).checked = true;
+      if (q.get('e') !== null) $('ends').checked = q.get('e') === '1';
+      if (q.get('r') !== null) $('rails-on').checked = q.get('r') === '1';
+      for (const id of ids) { const v = q.get(id); if (v !== null && document.getElementById(id)) $(id).value = v.slice(0, 12); }
+    } catch {}
+  }
+
+  // ---- wiring ----
+  function syncVisibility() {
+    const mode = (form.querySelector('input[name="mode"]:checked') as HTMLInputElement).value;
+    $<HTMLElement>('mode-count').classList.toggle('hidden', mode !== 'count');
+    $<HTMLElement>('mode-gap').classList.toggle('hidden', mode !== 'gap');
+    const rails = $('rails-on').checked;
+    const box = $<HTMLElement>('rails');
+    box.classList.toggle('hidden', !rails);
+  }
+  form.addEventListener('input', () => { syncVisibility(); compute(); });
+  form.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name === 'units') setUnits(t.value === 'cm');
+    syncVisibility(); compute();
+  });
+  document.querySelectorAll<HTMLButtonElement>('.chip').forEach((c) =>
+    c.addEventListener('click', () => {
+      writeLen('batten', parseFloat(c.dataset.in!) * (state.metric ? 1 : 1));
+      compute();
+    }),
+  );
+  $('count-up').addEventListener('click', () => { $('count').value = String((parseInt(val('count'), 10) || 0) + 1); compute(); });
+  $('count-down').addEventListener('click', () => { $('count').value = String(Math.max(1, (parseInt(val('count'), 10) || 2) - 1)); compute(); });
+
+  readHash();
+  syncVisibility();
+  compute();
+</script>
