@@ -3,6 +3,7 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
+  --color-edge: var(--edge);
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
@@ -17,28 +18,38 @@
 
 :root {
   color-scheme: light;
-  --paper: #f7f6f2;
+  --paper: #f6f7f5;
   --card: #ffffff;
-  --ink: #16161a;
-  --muted: #5d5d66;
-  --line: #e2e0d8;
-  --brand-ink: color-mix(in oklab, var(--brand) 82%, black);
-  --brand-soft: color-mix(in oklab, var(--brand) 10%, var(--paper));
+  --ink: #16181b;
+  --muted: #5b6068;
+  --line: #e3e5e1;
+  --line-strong: #c9ccc6;
+  --edge: #878c93;
+  --card-shadow: 0 1px 2px rgb(16 24 40 / .05), 0 8px 24px -12px rgb(16 24 40 / .10);
+  --brand-ink: color-mix(in oklab, var(--brand) 85%, black);
+  --brand-soft: color-mix(in oklab, var(--brand) 11%, var(--card));
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #0f1012;
-  --card: #17181b;
-  --ink: #ececea;
-  --muted: #a0a0a8;
-  --line: #2a2b30;
+  --paper: #0f1113;
+  --card: #17191c;
+  --ink: #eceeed;
+  --muted: #a3a8b0;
+  --line: #2a2d31;
+  --line-strong: #3a3e44;
+  --edge: #6b7078;
+  --card-shadow: none;
   --brand-ink: color-mix(in oklab, var(--brand) 55%, white);
-  --brand-soft: color-mix(in oklab, var(--brand) 18%, var(--paper));
+  --brand-soft: color-mix(in oklab, var(--brand) 14%, #121416);
 }
 
 html { background: var(--paper); scroll-padding-top: 5rem; }
 body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 3px solid var(--brand-ink); outline-offset: 2px; border-radius: 4px; }
+.ad-slot { margin: 2rem auto 0; max-width: 728px; min-height: 90px; border: 1px dashed var(--line-strong); border-radius: 10px; padding: 1.25rem 0.5rem 0.5rem; position: relative; }
+.ad-slot::before { content: "Advertisement"; position: absolute; top: 0.25rem; left: 0.5rem; font-size: 11px; letter-spacing: .04em; color: var(--muted); }
+@media (max-width: 639px) { .ad-slot { min-height: 100px; max-width: 320px; } }
+@media print { .ad-slot { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 
 /* Long-form text: used by article and legal pages */
@@ -52,22 +63,24 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font-sans
 .prose-site strong { font-weight: 650; }
 
 /* Tool controls */
-.fld { display: block; width: 100%; min-height: 2.75rem; border: 1px solid var(--line); border-radius: 0.75rem; background: var(--paper); color: var(--ink); padding: 0.5rem 0.75rem; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.fld { display: block; width: 100%; min-height: 2.875rem; border: 1px solid var(--edge); border-radius: 0.75rem; background: var(--paper); color: var(--ink); padding: 0.5rem 0.75rem; font-size: 1rem; font-variant-numeric: tabular-nums; }
 .fld:focus { border-color: var(--brand); outline: 2px solid color-mix(in oklab, var(--brand) 35%, transparent); outline-offset: 0; }
 .fld[aria-invalid="true"] { border-color: #b3261e; outline: 2px solid color-mix(in oklab, #b3261e 35%, transparent); }
 .lbl { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--muted); margin-bottom: 0.25rem; letter-spacing: 0.01em; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--paper); }
+.seg { display: inline-flex; border: 1px solid var(--edge); border-radius: 999px; padding: 3px; background: var(--paper); }
 .seg label { cursor: pointer; }
 .seg span { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 0.95rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; color: var(--muted); }
 .seg input:checked + span { background: var(--brand); color: #fff; }
 .seg input:focus-visible + span { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
-.chip { min-height: 2.75rem; padding: 0 0.85rem; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+.chip { min-height: 2.75rem; padding: 0 0.85rem; border: 1px solid var(--edge); border-radius: 999px; background: var(--card); color: var(--ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; }
 .chip:hover, .chip[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-ink); }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 0.75rem; border: 1px solid var(--line); background: var(--card); font-weight: 650; font-size: 0.95rem; cursor: pointer; color: var(--ink); }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { border-color: var(--brand-ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: 0.75rem; border: 1px solid var(--edge); background: var(--card); font-weight: 650; font-size: 0.95rem; cursor: pointer; color: var(--ink); }
 .btn:hover { border-color: var(--brand); }
 .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
 .btn-primary:hover { filter: brightness(1.08); }
-.step { width: 2.75rem; min-height: 2.75rem; border: 1px solid var(--line); border-radius: 0.75rem; background: var(--card); font-size: 1.4rem; font-weight: 600; line-height: 1; cursor: pointer; color: var(--ink); }
+:root[data-theme="dark"] .btn-primary { border-color: var(--brand-ink); }
+.step { width: 2.75rem; min-height: 2.75rem; border: 1px solid var(--edge); border-radius: 0.75rem; background: var(--card); font-size: 1.4rem; font-weight: 600; line-height: 1; cursor: pointer; color: var(--ink); }
 .step:hover { border-color: var(--brand); }
 .chk { display: flex; align-items: center; gap: 0.65rem; min-height: 2.75rem; cursor: pointer; font-weight: 550; }
 .chk input { width: 1.25rem; height: 1.25rem; accent-color: var(--brand); flex: none; }
@@ -78,7 +91,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font-sans
 
 @media print {
   /* Paper is always white, so use the light colors even when the page is in dark mode. */
-  :root, :root[data-theme="dark"] { color-scheme: light; --paper: #fff; --card: #fff; --ink: #000; --muted: #444; --line: #bbb; --brand-ink: color-mix(in oklab, var(--brand) 82%, black); --brand-soft: #f1f1f1; }
+  :root, :root[data-theme="dark"] { color-scheme: light; --paper: #fff; --card: #fff; --ink: #000; --muted: #444; --line: #bbb; --edge: #888; --brand-ink: color-mix(in oklab, var(--brand) 85%, black); --brand-soft: #f1f1f1; }
   header, footer, .no-print, nav, #sticky { display: none !important; }
   body { background: #fff !important; color: #000 !important; }
   main > section:not(:first-child), main > section h1, main > section > p { display: none !important; }

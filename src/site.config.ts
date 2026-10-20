@@ -11,7 +11,7 @@ export default {
   email: 'hello@boardandbattenspacingcalculator.com',       // contact email (shown on Contact and Privacy pages)
   ga4: '',                            // GA4 measurement ID, e.g. 'G-XXXXXXXXXX'. Empty = Google Analytics off
   adsense: '',                        // AdSense publisher ID, e.g. 'ca-pub-1234567890123456'. Empty = ads off
-  brand: '#2c5a4b',                   // brand color (hex)
+  brand: '#4d6319',                   // brand color (hex)
   locale: 'en-US',                    // BCP 47 language tag
   ogImage: '/og.png',                        // e.g. '/og.png' (1200x630 file in public/). Empty = no image
   category: 'UtilitiesApplication',   // schema.org applicationCategory
