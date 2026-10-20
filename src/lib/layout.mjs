@@ -37,6 +37,19 @@ export function parseFeet(text) {
   return /^(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) * 12 : NaN;
 }
 
+// Split a one-field entry such as 12'6 1/2 into feet, whole inches and sixteenths for the three boxes.
+// Returns null when the text has no foot mark, makes no sense, or does not fall on a 1/16 in step.
+export function splitFeetEntry(text) {
+  const s = String(text ?? '').replace(/[’′]/g, "'");
+  if (!s.includes("'")) return null;
+  const total = parseFeet(s);
+  if (!Number.isFinite(total)) return null;
+  const sixteenths = Math.round(total * 16);
+  if (Math.abs(sixteenths - total * 16) > 1e-6) return null;
+  const whole = Math.floor(sixteenths / 16);
+  return { ft: Math.floor(whole / 12), inch: whole % 12, fr: sixteenths % 16 };
+}
+
 // Parse a plain decimal number (centimeters). Returns NaN for anything else.
 export function parseNumber(text) {
   const s = String(text ?? '').replace(/,/g, '.').trim();
@@ -202,6 +215,7 @@ export function plan(input) {
   let marks = positions(width, batten, v.count, v.gap, withEnds, endW);
   const pitch = batten + v.gap;
   let anchor = null;
+  const baseCount = v.count;
   if (input.anchor && input.anchor.on) {
     const x = input.anchor.x;
     if (!(x > 0) || x >= width) return fail('The feature position must be inside the wall width.', 'anchor');
@@ -238,5 +252,5 @@ export function plan(input) {
   if (v.gap < batten * 0.5 && v.gap > 0) warnings.push('The gap is narrower than half a batten. The wall will look dense.');
   if (v.gap === 0) warnings.push('The gap is zero. The battens touch.');
   if (anchor && Math.min(anchor.left, anchor.right) < batten * 0.5) warnings.push('One end space is narrower than half a batten. Move the feature position a little, or change the batten count.');
-  return { ok: true, count: v.count, gap: v.gap, gapCount: v.gaps, pitch, marks, rails, linear, buy, best, warnings, anchor, endWidth: endW };
+  return { ok: true, count: v.count, gap: v.gap, gapCount: v.gaps, pitch, marks, rails, linear, buy, best, warnings, anchor, baseCount, endWidth: endW };
 }

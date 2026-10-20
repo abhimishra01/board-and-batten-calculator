@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { parseInches, parseFeet, parseNumber, MAX_COUNT, formatInches, formatFeetInches, formatCm, solveByCount, solveByGap, positions, anchoredMarks, packBoards, plan, STOCK_IMPERIAL } from '../src/lib/layout.mjs';
+import { parseInches, parseFeet, splitFeetEntry, parseNumber, MAX_COUNT, formatInches, formatFeetInches, formatCm, solveByCount, solveByGap, positions, anchoredMarks, packBoards, plan, STOCK_IMPERIAL } from '../src/lib/layout.mjs';
 
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok', name); };
@@ -225,4 +225,18 @@ t('plan: anchor warns about a sliver at the end', () => {
   const small = Math.min(p.anchor.left, p.anchor.right) < 1.25;
   assert.equal(p.warnings.some((w) => w.includes('end space')), small);
 });
+
+t('plan: anchor reports the count before centering', () => {
+  const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, anchor: { on: true, x: 64, kind: 'gap' } });
+  assert.equal(p.baseCount, 10);
+  assert.equal(p.count, 9);
+  assert.ok(p.anchor.left > 0 && p.anchor.right > 0);
+});
+t('splitFeetEntry: one-field entry', () => {
+  assert.deepEqual(splitFeetEntry("12'6 1/2"), { ft: 12, inch: 6, fr: 8 });
+  assert.deepEqual(splitFeetEntry("8'"), { ft: 8, inch: 0, fr: 0 });
+  assert.equal(splitFeetEntry('12'), null);
+  assert.equal(splitFeetEntry("12'abc"), null);
+});
+
 console.log(`\n${n} tests passed`);

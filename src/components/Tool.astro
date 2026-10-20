@@ -23,10 +23,12 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
       <fieldset class="m-0 min-w-0 border-0 p-0" data-len="width">
         <legend class="lbl">Wall width</legend>
         <LenField id="width" label="Wall width" ft="12" inch="0" />
+        <p class="imp mt-1 text-xs text-muted" id="width-hint">Or type it in the feet box in one go, like 12'6 1/2.</p>
       </fieldset>
       <fieldset class="m-0 min-w-0 border-0 p-0" data-len="height">
         <legend class="lbl">Wall height</legend>
         <LenField id="height" label="Wall height" ft="8" inch="0" />
+        <p class="imp mt-1 text-xs text-muted" id="height-hint">Or type it in the feet box in one go, like 8'2.</p>
       </fieldset>
 
       <fieldset class="m-0 min-w-0 border-0 p-0" data-len="batten">
@@ -78,7 +80,7 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
           <label><input class="sr-only" type="radio" name="akind" value="gap" checked /><span>A gap</span></label>
           <label><input class="sr-only" type="radio" name="akind" value="batten" /><span>A batten</span></label>
         </div>
-        <p class="mt-2 text-xs text-muted">The tool keeps the gap from above and slides the whole run until a gap (or a batten) is centered on this point. The count can change, and the two end spaces will not match. The end batten options do not apply.</p>
+        <p class="mt-2 text-xs text-muted">The tool keeps the gap from above and slides the whole run until a gap (or a batten) is centered on this point. The count can change, and the two end spaces will not match. While this is on, the end batten boxes above are switched off and do not apply.</p>
       </fieldset>
 
       <fieldset id="rails" class="m-0 hidden min-w-0 gap-3 rounded-xl border border-line p-3" data-len="rail">
@@ -167,7 +169,7 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
 
 <script>
   import {
-    parseInches, parseFeet, parseNumber, formatInches, formatFeetInches, formatCm, plan, MM_PER_IN,
+    parseInches, parseFeet, splitFeetEntry, parseNumber, formatInches, formatFeetInches, formatCm, plan, MM_PER_IN,
   } from '../lib/layout.mjs';
 
   const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
@@ -322,7 +324,7 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
     return L;
   }
   function summaryLine(p: any, input: any): string {
-    const ends = input.withEnds ? 'batten at each end' : 'gap at each end';
+    const ends = p.anchor ? 'centered on a feature' : input.withEnds ? 'batten at each end' : 'gap at each end';
     return `Wall ${fmtLong(input.width)} wide x ${fmtLong(input.height)} high. Battens ${fmtShort(input.batten)} wide, ${p.count} of them, ${ends}.${p.rails ? ` ${p.rails.count} ${p.rails.count === 1 ? 'rail' : 'rails'} ${fmtShort(p.rails.width)} wide.` : ''}`;
   }
 
@@ -333,7 +335,7 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
     sample.classList.toggle('hidden', !untouched || !sample.textContent);
     let note = '';
     if (p.anchor) {
-      note = `Centered on ${fmtLong(input.anchor.x)} from the left: ${p.anchor.kind === 'gap' ? 'a gap' : 'a batten'} sits there. The left end space is ${fmtShort(p.anchor.left)} and the right end space is ${fmtShort(p.anchor.right)}.`;
+      note = `Centered on ${fmtLong(input.anchor.x)} from the left: ${p.anchor.kind === 'gap' ? 'a gap' : 'a batten'} sits there. The left end space is ${fmtShort(p.anchor.left)} and the right end space is ${fmtShort(p.anchor.right)}, so there is no batten at each end of the wall.${p.count !== p.baseCount ? ` The batten count changed from ${p.baseCount} to ${p.count} so the layout fits with the same gap.` : ''}`;
     } else if (input.mode === 'gap' && Math.abs(p.gap - input.targetGap) > 1 / 32) {
       note = `You asked for a ${fmtShort(input.targetGap)} gap. The nearest even layout has ${p.count} battens, with gaps of ${fmtShort(p.gap)} (${p.gap > input.targetGap ? 'wider' : 'narrower'} by ${fmtShort(Math.abs(p.gap - input.targetGap))}).`;
     }
@@ -353,10 +355,10 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
       withEnds: $('ends').checked,
       metric: state.metric,
       rails: { on: $('rails-on').checked, count: readCount('rail-count'), width: readLen('rail') },
-      endWidth: $('wide-on').checked ? readLen('endb') : 0,
+      endWidth: $('wide-on').checked && !$('anchor-on').checked ? readLen('endb') : 0,
       anchor: { on: $('anchor-on').checked, x: readLen('anchor'), kind: checkedValue('akind') },
     };
-    const p = !input.endWidth && $('wide-on').checked && $('ends').checked
+    const p = !input.endWidth && $('wide-on').checked && $('ends').checked && !$('anchor-on').checked
       ? { ok: false, errors: ['Enter the end batten width.'], field: 'endb' }
       : plan(input);
     document.querySelectorAll<HTMLElement>('.chip').forEach((c) =>
@@ -526,12 +528,29 @@ const { preset = null, note = 'Sample wall. Type yours.' } = Astro.props;
     el('rails').classList.toggle('hidden', !$('rails-on').checked);
     el('wide-box').classList.toggle('hidden', !$('wide-on').checked);
     el('anchor-box').classList.toggle('hidden', !$('anchor-on').checked);
+    // Centering on a feature sets its own end spaces, so the end batten boxes cannot apply.
+    const anch = $('anchor-on').checked;
+    for (const id of ['ends', 'wide-on']) {
+      const box = $(id);
+      box.disabled = anch;
+      box.closest('label')!.classList.toggle('opacity-50', anch);
+    }
   }
   // Text boxes update on every key. Selects, radios and checkboxes update on change.
   const isText = (t: HTMLInputElement) => t.tagName === 'INPUT' && t.type === 'text';
   form.addEventListener('input', (e) => {
     if (!isText(e.target as HTMLInputElement)) return;
     untouched = false;
+    compute();
+  });
+  // One-field entry such as 12'6 1/2 in a feet box: when the box loses focus, spread it over the three boxes.
+  form.addEventListener('focusout', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (!isText(t) || !t.id.endsWith('-ft') || state.metric) return;
+    const id = t.id.slice(0, -3);
+    const sp = splitFeetEntry(t.value);
+    if (!sp) return;
+    t.value = String(sp.ft); $(`${id}-in`).value = String(sp.inch); $(`${id}-fr`).value = String(sp.fr);
     compute();
   });
   form.addEventListener('change', (e) => {
