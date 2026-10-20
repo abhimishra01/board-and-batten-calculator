@@ -167,7 +167,7 @@ const jsonLd = [
   },
 ];
 ---
-<Base jsonLd={jsonLd} rawTitle={`${page.metaTitle} | ${site.name}`} description={page.description}>
+<Base jsonLd={jsonLd} title={page.metaTitle} description={page.description}>
   <section class="mx-auto max-w-5xl px-4 pt-10 sm:pt-16">
     <nav aria-label="Breadcrumb" class="mb-3 text-sm text-muted"><a href={href('/')} class="underline-offset-4 hover:underline">Board and batten calculator</a> <span aria-hidden="true">/</span> {page.short}</nav>
     <h1 class="max-w-3xl text-3xl font-extrabold leading-[1.1] tracking-tight [text-wrap:balance] sm:text-5xl">{page.h1}</h1>
