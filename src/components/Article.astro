@@ -1,11 +1,20 @@
 ---
 // SEO article for the board and batten calculator.
+import { solveByGap, formatInches } from '../lib/layout.mjs';
+
+// The "common wall sizes" table is computed here, so it always matches the tool.
+const walls = [8, 10, 12, 14, 16];
+const cell = (feet: number, target: number) => {
+  const r = solveByGap(feet * 12, 2.5, target, true);
+  return { count: r.count, gap: formatInches(r.gap) };
+};
+const rows = walls.map((ft) => ({ ft, a: cell(ft, 12), b: cell(ft, 16) }));
 ---
 <section aria-labelledby="about-tool" class="mx-auto max-w-5xl px-4 pt-16">
   <article class="prose-site">
     <h2 id="about-tool" style="margin-top:0">What a board and batten calculator does</h2>
-    <p>A board and batten calculator tells you where to put each batten so the gaps on your wall are equal. You give it the wall width, the width of your battens and how many you want. It returns the exact gap, a pencil mark for the center of every batten, and the boards to buy. This board and batten spacing calculator also draws the wall to scale, so you can see the result before you cut anything.</p>
-    <p>Equal gaps matter because the eye catches a small difference. If six gaps are 12 inches and the last one is 9, the wall looks wrong, even when no one can say why. Doing the math first removes the problem.</p>
+    <p><a href="#tool" class="underline">A board and batten calculator</a> tells you where to put each batten so the gaps on your wall are equal. You give it the wall width, the width of your battens and how many you want. It returns the exact gap, a pencil mark for the center of every batten, and the boards to buy. This board and batten spacing calculator also draws the wall to scale, so you can see the result before you cut anything.</p>
+    <p>Equal gaps matter because the eye catches a small difference. If six gaps are 12 inches and the last one is 9, the wall looks wrong, even when no one can say why.</p>
 
     <h2>How to space board and batten on a wall</h2>
     <ol>
@@ -29,16 +38,14 @@
     <p>The first center mark is 1 1/4 inches from the left edge. The last one is 11 feet 10 3/4 inches. The tool rounds each mark to the nearest 1/16 inch, so no mark is off by more than 1/32 inch.</p>
 
     <h2>Common wall sizes with 1x3 battens</h2>
-    <p>These values use 2 1/2 inch battens, with a batten at each end. The count is the one that lands closest to the gap in the heading.</p>
+    <p>These values use 2 1/2 inch battens, with a batten at each end. Each count gives the gap nearest 12 inches or 16 inches.</p>
     <div class="overflow-x-auto">
       <table class="tbl" style="max-width:34rem">
         <thead><tr><th scope="col">Wall width</th><th scope="col">Battens</th><th scope="col">Gap</th><th scope="col">Battens</th><th scope="col">Gap</th></tr><tr><th scope="col"></th><th scope="col" colspan="2">About 12 in gap</th><th scope="col" colspan="2">About 16 in gap</th></tr></thead>
         <tbody>
-          <tr><th scope="row" class="px-2 text-left">8 ft</th><td>7</td><td>13 1/16"</td><td>6</td><td>16 3/16"</td></tr>
-          <tr><th scope="row" class="px-2 text-left">10 ft</th><td>9</td><td>12 3/16"</td><td>7</td><td>17 1/16"</td></tr>
-          <tr><th scope="row" class="px-2 text-left">12 ft</th><td>11</td><td>11 5/8"</td><td>9</td><td>15 3/16"</td></tr>
-          <tr><th scope="row" class="px-2 text-left">14 ft</th><td>12</td><td>12 9/16"</td><td>10</td><td>15 7/8"</td></tr>
-          <tr><th scope="row" class="px-2 text-left">16 ft</th><td>14</td><td>12 1/16"</td><td>11</td><td>16 7/16"</td></tr>
+          {rows.map((r) => (
+            <tr><th scope="row" class="px-2 text-left">{r.ft} ft</th><td>{r.a.count}</td><td>{r.a.gap}</td><td>{r.b.count}</td><td>{r.b.gap}</td></tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -50,6 +57,9 @@
     <h2>Horizontal rails and the boards to buy</h2>
     <p>If your design has a top rail, turn on the rails option. The tool spaces them from the floor to the ceiling and adds them to the cut list. Rails are longer than most boards, so the tool splits them and counts the pieces.</p>
     <p>The boards table shows how many 8, 10 and 12 foot boards you need. It allows 1/8 inch for each saw cut and packs the pieces to waste as little as possible. The best option is highlighted. Buy one extra board, because a bad cut or a bowed board happens.</p>
+
+    <h2>Planning a whole room</h2>
+    <p>Measure each wall on its own. Run the numbers for each one and keep the same gap on every wall, so the room looks even. Start from a corner and work around. If a wall has a window, a door or an outlet, mark those first and check that no batten lands on an edge.</p>
 
     <h2>Tips before you nail</h2>
     <ul>

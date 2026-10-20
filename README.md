@@ -1,49 +1,46 @@
-# Microtool site template
+# Board and Batten Calculator
 
-Astro (static) + Tailwind 4. One config file: `src/site.config.ts`. No backend.
+A free browser tool that spaces board and batten evenly on a wall. You enter the wall size, the batten width and either the number of battens or the gap you want. It returns the exact gap, a pencil mark for every batten (to 1/16 inch), a to-scale drawing, optional horizontal rails, a cut list, and the number of 8, 10 and 12 foot boards to buy. It also works in metric. Domain: boardandbattenspacingcalculator.com.
 
-## Make a new tool
+Built with Astro (static output) and Tailwind 4. No backend.
+
+## Where the logic lives
+
+- `src/lib/layout.mjs`: all the math (parsing, formatting, spacing, rails, board packing, limits). Plain JavaScript with no dependencies, so Node can test it.
+- `src/components/Tool.astro`: the form, the drawing and the page script. It only reads inputs, calls `plan()` and shows the result.
+- `src/components/LenField.astro`: one length input (feet, inches, fraction, or centimeters).
+- `src/components/Article.astro` and `src/data/faq.ts`: the text under the tool. The "common wall sizes" table is computed from `layout.mjs` at build time.
+- `src/site.config.ts`: name, domain, description, email, analytics and ads IDs.
+- `src/lib/url.ts`: `href()` adds the base path to every internal link and asset.
+
+## Commands
+
+- `npm run dev`: work on the site.
+- `npm test`: unit tests for `layout.mjs` (`scripts/test.mjs`).
+- `npm run build`: build `dist/`.
+- `npm run preview`: serve the build.
+- `npm run deploy`: run the tests, build, then upload to Cloudflare Pages (needs `npx wrangler login` once, and Node 22.6 or newer).
+
+## Rules the tool follows
+
+- With a batten at each end, gap = (wall - battens x width) / (battens - 1). Without end battens, divide by (battens + 1).
+- Rails sit flush with the floor and the ceiling (one rail sits in the middle).
+- Board counts allow 1/8 inch per saw cut. Limits: 300 battens, 20 rails.
+- Marks are rounded to the nearest 1/16 inch.
+
+## GitHub Pages
+
+The site is also served from `https://abhimishra01.github.io/board-and-batten-calculator/` until the domain is live. `.github/workflows/pages.yml` runs on every push to `main`: install, test, build with `PAGES_BASE=/board-and-batten-calculator/` and `PAGES_SITE=https://abhimishra01.github.io`, then deploy. To test it locally:
 
 ```
-cd ~/Desktop/personal/microtools
-template/scripts/new-tool.sh my-tool mytool.com
-cd sites/my-tool && npm run dev
+PAGES_BASE=/board-and-batten-calculator/ npx astro build --outDir dist-pages
 ```
 
-Then edit, in this order:
-1. `src/site.config.ts`: name, main keyword, supporting keywords, description, email, brand colour.
-2. `src/components/Tool.astro`: the real tool (replace the demo; keep the fixed height so the page does not jump).
-3. `src/components/Article.astro`: about 600 words of plain text. Main keyword in the first paragraph and one heading.
-4. `src/data/faq.ts`: 5 to 8 real questions. They also become FAQ schema.
-5. Optional: `public/og.png` (1200x630) and set `ogImage: '/og.png'`.
-6. Check About, Terms and Privacy text still fit the tool.
+Canonical links always point to the real domain. Without those two variables the build uses `/` and the real domain.
 
-Commands: `npm run dev` (work), `npm run build` (make `dist/`), `npm run preview` (check the build), `npm run deploy` (build and upload to Cloudflare Pages).
+## Go live
 
-## Go live (plain steps)
-
-1. **Buy the domain** after the tool works. `.com`, 1 year, auto-renew off. Put it in `site.config.ts` as `domain` (no `www`, no `https://`). Rebuild.
-2. **Cloudflare**: add the domain to Cloudflare (free plan) and change the nameservers at the registrar.
-3. **First deploy**: run `npx wrangler login` once (you do this, in your browser). Then `npm run deploy`. The first run asks to create the Pages project; use the same name as `cloudflareProject` in the config.
-4. **Custom domain**: Cloudflare dashboard > Workers & Pages > your project > Custom domains. Add `mytool.com` and `www.mytool.com`. Then add a redirect rule from `www` to the bare domain (or the reverse) so only one version exists.
-5. **No duplicate in Google**: `public/_headers` already sets `X-Robots-Tag: noindex` for the `*.pages.dev` address only. Check it: `curl -sI https://my-tool.pages.dev | grep -i robots` shows noindex; the custom domain does not.
-6. **Google Search Console**: add the domain property, verify with the DNS TXT record in Cloudflare, submit `https://mytool.com/sitemap-index.xml`, request indexing of the home page.
-7. **Bing Webmaster Tools**: sign in, import from Search Console.
-8. **Google Analytics**: create a GA4 property, copy the measurement ID (`G-...`) to `ga4` in the config, rebuild, deploy. Empty means off.
-9. **AdSense (later, about 10 visits a day or more)**: apply with the site. When approved, put the publisher ID (`ca-pub-...`) in `adsense`. The build then adds the script and writes `/ads.txt`. Set up the consent message in AdSense (Privacy & messaging) for EU/UK visitors. Then switch on Auto ads. A first rejection is normal; improve content and apply again.
-10. Share the tool on Reddit, Quora and social. Rankings take 4 to 6 months. Keep the domain at least a year.
-
-## How things work
-
-- **Dark mode**: follows the system, the toggle saves the choice. A tiny inline script sets it before paint, so there is no flash.
-- **SEO**: title, description, canonical (real domain), Open Graph, Twitter, `WebApplication` and `FAQPage` JSON-LD are in `src/layouts/Base.astro` and `src/pages/index.astro`.
-- **Sitemap and robots**: `@astrojs/sitemap` makes `/sitemap-index.xml`; `/robots.txt` points to it. The 404 page is excluded.
-- **ads.txt**: generated from `adsense`. Empty ID gives a comment line only.
-- **Favicon**: `/favicon.svg` is made from the first letter of the name and the brand colour (`src/pages/favicon.svg.ts`). To use your own, put a file at `public/favicon.svg` and delete that `.ts` file. For Apple and old browsers add `public/apple-touch-icon.png` (180x180) and a `<link rel="apple-touch-icon">` line in `Base.astro`.
-- **GA4 and AdSense** load only when their IDs are set (`src/components/Analytics.astro`). These are the only outside requests.
-- **Fonts**: system font stack, no downloads.
-- **Deploy script**: `scripts/deploy.mjs` reads `cloudflareProject` and runs `wrangler pages deploy dist`. It needs Node 22.6 or newer.
-
-## Legal pages
-
-The About, Terms and Privacy pages are good starting text, not legal advice. Read them before you launch and edit what does not match your tool.
+1. Buy the domain, and make sure `domain` in `src/site.config.ts` matches.
+2. Add the domain to Cloudflare Pages and run `npm run deploy`. `public/_headers` keeps the `*.pages.dev` address out of Google.
+3. Add the site to Google Search Console and Bing Webmaster Tools, and submit `/sitemap-index.xml`.
+4. For analytics or ads, set `ga4` or `adsense` in the config and rebuild. `/ads.txt` is generated from the AdSense ID.

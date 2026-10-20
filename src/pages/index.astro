@@ -22,11 +22,6 @@ const jsonLd = [
   },
   {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Board and Batten Calculator', item: `${base}/` }],
-  },
-  {
-    '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: faq.map((f) => ({
       '@type': 'Question',
@@ -44,12 +39,6 @@ const jsonLd = [
     </h1>
     <p class="mt-4 max-w-2xl text-lg text-muted">Find the exact spacing for board and batten on your wall. Get a mark for every batten, a drawing to scale and the boards to buy. Free, with no sign-up.</p>
     <div class="mt-8"><Tool /></div>
-    <p class="mt-6 text-sm text-muted">
-      <a href="/about/" class="underline underline-offset-4 hover:text-ink">About</a> &middot;
-      <a href="/privacy/" class="underline underline-offset-4 hover:text-ink">Privacy Policy</a> &middot;
-      <a href="/terms/" class="underline underline-offset-4 hover:text-ink">Terms</a> &middot;
-      <a href="/contact/" class="underline underline-offset-4 hover:text-ink">Contact</a>
-    </p>
   </section>
   <Article />
   <Faq />

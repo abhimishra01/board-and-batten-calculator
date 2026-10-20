@@ -1,0 +1,22 @@
+---
+// One length input. Feet and inches boxes plus a fraction select, or inches and a fraction, with a metric (cm) box beside them.
+// The page script shows `.imp` in feet and inches mode and `.met` in metric mode.
+interface Props { id: string; label: string; ft?: string; inch: string; fr?: number; }
+const { id, label, ft, inch, fr = 0 } = Astro.props;
+const fracs = Array.from({ length: 16 }, (_, i) => i);
+const fracLabel = (i: number) => {
+  if (!i) return '0';
+  let n = i, d = 16;
+  while (n % 2 === 0) { n /= 2; d /= 2; }
+  return `${n}/${d}`;
+};
+const unitCls = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted';
+---
+<div class={`grid gap-2 imp ${ft !== undefined ? 'grid-cols-3' : 'grid-cols-2'}`}>
+  {ft !== undefined && (
+    <div><label class="sr-only" for={`${id}-ft`}>{label}, feet</label><div class="relative"><input class="fld pr-9" id={`${id}-ft`} inputmode="decimal" value={ft} /><span class={unitCls} aria-hidden="true">ft</span></div></div>
+  )}
+  <div><label class="sr-only" for={`${id}-in`}>{label}, inches</label><div class="relative"><input class="fld pr-9" id={`${id}-in`} inputmode="decimal" value={inch} /><span class={unitCls} aria-hidden="true">in</span></div></div>
+  <div><label class="sr-only" for={`${id}-fr`}>{label}, fraction of an inch</label><select class="fld px-2" id={`${id}-fr`}>{fracs.map((i) => <option value={i} selected={i === fr}>{fracLabel(i)}</option>)}</select></div>
+</div>
+<div class="met hidden"><label class="sr-only" for={`${id}-cm`}>{label}, centimeters</label><div class="relative"><input class="fld pr-10" id={`${id}-cm`} inputmode="decimal" /><span class={unitCls} aria-hidden="true">cm</span></div></div>
