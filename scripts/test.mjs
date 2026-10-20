@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { parseInches, formatInches, formatFeetInches, formatCm, solveByCount, solveByGap, positions, packBoards, plan, STOCK_IMPERIAL } from '../src/lib/layout.mjs';
+import { parseInches, parseFeet, parseNumber, MAX_COUNT, formatInches, formatFeetInches, formatCm, solveByCount, solveByGap, positions, packBoards, plan, STOCK_IMPERIAL } from '../src/lib/layout.mjs';
 
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok', name); };
@@ -60,13 +60,13 @@ t('solve by gap picks the closest count', () => {
   const r2 = solveByGap(144, 2.5, 10, false);
   assert.equal(r2.count, 11); // (144-10)/12.5 = 10.72
 });
-t('centre marks', () => {
+t('center marks', () => {
   const r = solveByCount(144, 2.5, 10, true);
   const m = positions(144, 2.5, 10, r.gap, true);
-  near(m[0].centre, 1.25);
-  near(m[9].centre, 142.75);
-  assert.equal(formatFeetInches(m[9].centre), `11' 10 3/4"`);
-  near(m[1].centre - m[0].centre, 2.5 + r.gap);
+  near(m[0].center, 1.25);
+  near(m[9].center, 142.75);
+  assert.equal(formatFeetInches(m[9].center), `11' 10 3/4"`);
+  near(m[1].center - m[0].center, 2.5 + r.gap);
 });
 t('packing boards', () => {
   const four = Array.from({ length: 4 }, () => ({ len: 36 }));
@@ -81,7 +81,7 @@ t('packing boards', () => {
   assert.equal(packBoards([{ len: 72 }, { len: 72 }], 144).boards, 2);
   near(packBoards([{ len: 48 }], 96).waste, 0.5);
 });
-t('plan: 12 ft wall, 8 ft tall, 10 battens, 3 rails', () => {
+t('plan: 12 ft wall, 8 ft tall, 10 battens, 2 rails', () => {
   const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, metric: false,
     rails: { on: true, count: 2, width: 3.5 } });
   assert.ok(p.ok);
@@ -97,7 +97,7 @@ t('plan: 12 ft wall, 8 ft tall, 10 battens, 3 rails', () => {
 t('plan: a single rail sits in the middle', () => {
   const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, rails: { on: true, count: 1, width: 4 } });
   assert.ok(p.ok);
-  near(p.rails.marks[0].centre, 48);
+  near(p.rails.marks[0].center, 48);
 });
 t('plan: errors', () => {
   assert.equal(plan({ width: 0, height: 96, batten: 2.5, mode: 'count', count: 5, withEnds: true }).ok, false);
@@ -111,8 +111,75 @@ t('plan: one batten with end battens is not possible', () => {
   assert.equal(r.ok, false);
 });
 t('metric stock sizes', () => {
-  const p = plan({ width: 120 / 2.54 * 2.54, height: 94, batten: 2.5, mode: 'count', count: 6, withEnds: true, metric: true });
+  const p = plan({ width: 120, height: 94, batten: 2.5, mode: 'count', count: 6, withEnds: true, metric: true });
   assert.ok(p.ok);
   near(p.buy[0].stock, 2400 / 25.4);
 });
-console.log(`\n${n} test groups passed`);
+
+
+t('parse inches: trailing dot and junk', () => {
+  assert.equal(parseInches('5.'), 5);
+  assert.ok(Number.isNaN(parseInches('12abc')));
+  assert.ok(Number.isNaN(parseInches('1e2')));
+});
+t('parse feet box: plain numbers and 12\'6 shortcuts', () => {
+  assert.equal(parseFeet('12'), 144);
+  assert.equal(parseFeet(''), 0);
+  assert.equal(parseFeet("12'6"), 150);
+  assert.equal(parseFeet(`12' 6 1/2"`), 150.5);
+  assert.equal(parseFeet("12'"), 144);
+  assert.ok(Number.isNaN(parseFeet('12abc')));
+  assert.ok(Number.isNaN(parseFeet('1/2')));
+  assert.equal(parseNumber('30,5'), 30.5);
+  assert.ok(Number.isNaN(parseNumber('3 0')));
+});
+t('plan: gap mode, no end battens, huge gap never gives zero battens', () => {
+  const r = plan({ width: 144, height: 96, batten: 2.5, mode: 'gap', targetGap: 200, withEnds: false });
+  assert.ok(!r.ok || r.count >= 1);
+  const r2 = plan({ width: 144, height: 96, batten: 2.5, mode: 'gap', targetGap: 60, withEnds: false });
+  assert.ok(r2.ok);
+  assert.equal(r2.count, 1);
+  near(r2.gap, 70.75);
+  assert.equal(r2.marks.length, 1);
+});
+t('plan: limits on batten and rail counts', () => {
+  const a = plan({ width: 5000, height: 96, batten: 0.5, mode: 'count', count: MAX_COUNT + 1, withEnds: true });
+  assert.equal(a.ok, false);
+  assert.equal(a.field, 'count');
+  const b = plan({ width: 144, height: 96, batten: 0.01, mode: 'gap', targetGap: 0.01, withEnds: true });
+  assert.equal(b.ok, false);
+  const c = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 5, withEnds: true, rails: { on: true, count: 99, width: 3.5 } });
+  assert.equal(c.ok, false);
+  assert.equal(c.field, 'rail-count');
+});
+t('plan: exact fits are not errors', () => {
+  const a = plan({ width: 3.3, height: 96, batten: 1.1, mode: 'count', count: 3, withEnds: true });
+  assert.ok(a.ok);
+  assert.equal(a.gap, 0);
+  const b = plan({ width: 30 / 2.54, height: 90, batten: 3 / 2.54, mode: 'count', count: 10, withEnds: true, metric: true });
+  assert.ok(b.ok);
+  assert.equal(b.gap, 0);
+  assert.ok(b.warnings.some((w) => w.includes('zero')));
+});
+t('plan: error names the field', () => {
+  assert.equal(plan({ width: NaN, height: 96, batten: 2.5, mode: 'count', count: 5, withEnds: true }).field, 'width');
+  assert.equal(plan({ width: 20, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true }).field, 'count');
+  const w = plan({ width: 2, height: 96, batten: 2.5, mode: 'count', count: 1, withEnds: false });
+  assert.match(w.errors[0], /wider than the wall/);
+});
+t('plan: rails sit flush with floor and ceiling even without end battens', () => {
+  const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: false, rails: { on: true, count: 3, width: 3.5 } });
+  assert.ok(p.ok);
+  near(p.rails.marks[0].left, 0);
+  near(p.rails.marks[2].right, 96);
+  near(p.rails.gap, (96 - 10.5) / 2);
+});
+t('plan: best board length', () => {
+  const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true, metric: false });
+  assert.equal(p.best.stock, 96); // ten 96 in battens: 10 boards of 8 ft waste nothing
+  assert.equal(p.best.boards, 10);
+  const q = plan({ width: 144, height: 100, batten: 2.5, mode: 'count', count: 4, withEnds: true });
+  assert.equal(q.buy[0].boards, null);
+  assert.equal(q.best.stock, 120);
+});
+console.log(`\n${n} tests passed`);
