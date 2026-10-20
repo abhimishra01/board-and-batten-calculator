@@ -143,7 +143,7 @@ t('plan: gap mode, no end battens, huge gap never gives zero battens', () => {
   assert.equal(r2.marks.length, 1);
 });
 t('plan: limits on batten and rail counts', () => {
-  const a = plan({ width: 5000, height: 96, batten: 0.5, mode: 'count', count: MAX_COUNT + 1, withEnds: true });
+  const a = plan({ width: 1200, height: 96, batten: 0.5, mode: 'count', count: MAX_COUNT + 1, withEnds: true });
   assert.equal(a.ok, false);
   assert.equal(a.field, 'count');
   const b = plan({ width: 144, height: 96, batten: 0.01, mode: 'gap', targetGap: 0.01, withEnds: true });
@@ -166,6 +166,13 @@ t('plan: error names the field', () => {
   assert.equal(plan({ width: 20, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true }).field, 'count');
   const w = plan({ width: 2, height: 96, batten: 2.5, mode: 'count', count: 1, withEnds: false });
   assert.match(w.errors[0], /wider than the wall/);
+});
+t('plan: absurd wall sizes get a message naming the field', () => {
+  const a = plan({ width: 1201, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: true });
+  assert.equal(a.ok, false); assert.equal(a.field, 'width'); assert.match(a.errors[0], /100 feet/);
+  const b = plan({ width: 144, height: 481, batten: 2.5, mode: 'count', count: 10, withEnds: true, metric: true });
+  assert.equal(b.field, 'height'); assert.match(b.errors[0], /12 m/);
+  assert.ok(plan({ width: 1200, height: 480, batten: 2.5, mode: 'count', count: 10, withEnds: true }).ok);
 });
 t('plan: rails sit flush with floor and ceiling even without end battens', () => {
   const p = plan({ width: 144, height: 96, batten: 2.5, mode: 'count', count: 10, withEnds: false, rails: { on: true, count: 3, width: 3.5 } });

@@ -7,6 +7,8 @@ export const STOCK_METRIC = [2400 / MM_PER_IN, 3000 / MM_PER_IN, 3600 / MM_PER_I
 export const KERF = 0.125; // saw cut, 1/8 in
 export const MAX_COUNT = 300; // most battens we draw; stops a typo from freezing the page
 export const MAX_RAILS = 20;
+export const MAX_WIDTH = 1200; // inches: 100 ft. A wall wider than this is a typo.
+export const MAX_HEIGHT = 480;  // inches: 40 ft
 const EPS = 1e-9;
 
 // Parse text like "6", "6.5", "5.", "6 1/2", "6-1/2", "1/2", "6 1/2\"". Returns number or NaN.
@@ -195,6 +197,8 @@ export function plan(input) {
   if (!(width > 0)) return fail('Enter the wall width.', 'width');
   if (!(batten > 0)) return fail('Enter the batten width.', 'batten');
   if (!(height > 0)) return fail('Enter the wall height.', 'height');
+  if (width > MAX_WIDTH) return fail(`The tool handles walls up to ${input.metric ? 'about 30 m' : '100 feet'} wide.`, 'width');
+  if (height > MAX_HEIGHT) return fail(`The tool handles walls up to ${input.metric ? 'about 12 m' : '40 feet'} high.`, 'height');
 
   let v;
   if (mode === 'gap') {

@@ -14,7 +14,7 @@ const unitCls = 'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 t
 ---
 <div class={`grid gap-2 imp ${ft !== undefined ? 'grid-cols-3' : 'grid-cols-2'}`}>
   {ft !== undefined && (
-    <div><label class="sr-only" for={`${id}-ft`}>{label}, feet</label><div class="relative"><input class="fld pr-9" id={`${id}-ft`} inputmode="decimal" value={ft} /><span class={unitCls} aria-hidden="true">ft</span></div></div>
+    <div><label class="sr-only" for={`${id}-ft`}>{label}, feet</label><div class="relative"><input class="fld pr-9" id={`${id}-ft`} inputmode="text" value={ft} /><span class={unitCls} aria-hidden="true">ft</span></div></div>
   )}
   <div><label class="sr-only" for={`${id}-in`}>{label}, inches</label><div class="relative"><input class="fld pr-9" id={`${id}-in`} inputmode="decimal" value={inch} /><span class={unitCls} aria-hidden="true">in</span></div></div>
   <div><label class="sr-only" for={`${id}-fr`}>{label}, fraction of an inch</label><select class="fld px-2" id={`${id}-fr`}>{fracs.map((i) => <option value={i} selected={i === fr}>{fracLabel(i)}</option>)}</select></div>
