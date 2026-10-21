@@ -2,7 +2,7 @@
 // that only fit that case. Tables are computed in src/pages/[slug].astro from layout.mjs.
 export type LayoutPage = {
   slug: string;
-  kind: 'wall' | 'batten' | 'ends' | 'boards' | 'gap' | 'rails';
+  kind: 'wall' | 'batten' | 'ends' | 'boards' | 'gap' | 'rails' | 'accent' | 'bathroom';
   short: string;          // link text on the home page and in the list of other layouts
   blurb: string;          // one line under the link on the home page
   h1: string;
@@ -291,6 +291,64 @@ export const layouts: LayoutPage[] = [
     faq: [
       { q: 'How wide should a board and batten rail be?', a: 'Many people use the same width as the battens, or one size up. A 1x4 rail with 1x3 battens is a common choice.' },
       { q: 'How do I find rail heights?', a: 'Enter the wall height, the number of rails and the rail width. The tool lists the center and bottom edge of each rail, measured up from the floor.' },
+    ],
+  },
+  {
+    slug: 'board-and-batten-accent-wall',
+    kind: 'accent',
+    short: 'Accent wall',
+    blurb: 'One feature wall: gaps, marks and boards for common widths.',
+    h1: 'Board and batten accent wall calculator',
+    metaTitle: 'Board and Batten Accent Wall Calculator (Free)',
+    description: 'Plan a board and batten accent wall. See the batten count and gap for common wall widths, the marks to draw and how many boards to buy. Free, in inches or cm.',
+    note: 'Set to a 12 ft wide accent wall, 8 ft high. Type your own numbers.',
+    intro: [
+      'A board and batten accent wall covers one wall of the room, often the one behind a bed, a sofa or a dining table. Because only one wall gets the pattern, the gaps are what everyone sees first. They must be equal.',
+      'Enter the width and height of your wall. The tool gives the exact gap, a mark for the center of every batten and the boards to buy. Switch to metric if you work in centimeters.',
+    ],
+    sections: [
+      { h: 'Pick the count, then check the look', p: [
+        'On an accent wall, most people choose gaps of 10 to 14 inches. Wide gaps look calm. Narrow gaps look busy and formal. Use the tables above to find a count near the gap you like, then compare the drawings in the tool.',
+      ] },
+      { h: 'Plan around what is on the wall', p: [
+        'A bed, a TV or a shelf will cover some of the wall. Decide where the furniture goes first. Then check that no batten lands on the edge of a window, a switch plate or a vent. Moving the count by one often fixes it.',
+      ] },
+      { h: 'Where the pattern stops', p: [
+        'On an accent wall the battens end at the corners of that wall. A batten at each end gives a finished edge. If the wall meets another painted wall, paint the battens and the wall the same color or a clear contrast, so the edge looks planned.',
+      ] },
+    ],
+    faq: [
+      { q: 'How many battens does an accent wall need?', a: 'It depends on the width and the gap. A 12 foot wall with 1x3 battens and a gap near 12 inches needs 10 battens. Use the table on this page for other widths.' },
+      { q: 'Can I use this calculator in centimeters?', a: 'Yes. Switch to Metric at the top of the tool and enter sizes in centimeters.' },
+    ],
+  },
+  {
+    slug: 'board-and-batten-bathroom',
+    kind: 'bathroom',
+    short: 'Bathroom',
+    blurb: 'Short walls and half-height wainscot with the boards to buy.',
+    h1: 'Board and batten bathroom calculator',
+    metaTitle: 'Board and Batten Bathroom Calculator and Spacing',
+    description: 'Space board and batten in a bathroom. Batten count and gap for 5 to 8 foot walls, plus the boards to buy for a 4 foot high wainscot. Free, in inches or cm.',
+    note: 'Set to a 6 ft wide wall, 4 ft high. Type your own numbers.',
+    intro: [
+      'Bathroom walls are short. Many are 5 to 8 feet wide, and many people stop the battens halfway up as a wainscot. On a small wall, a gap that is off by a little stands out.',
+      'Enter the width of the wall and the height where the battens stop. The tool gives the gap, the marks and the boards to buy. Use inches or centimeters.',
+    ],
+    sections: [
+      { h: 'Use a tight gap on a small wall', p: [
+        'In a small room, gaps of 6 to 10 inches usually look in proportion. A gap of 16 inches leaves a large flat panel that looks bare next to a vanity or a tub.',
+      ] },
+      { h: 'Wainscot height', p: [
+        'Enter the height where the battens end as the wall height. The table above uses 48 inches. The tool cuts each batten to that length and works out the boards for you.',
+      ] },
+      { h: 'Moisture', p: [
+        'A bathroom is damp. Use boards made for damp rooms or primed and sealed wood. Caulk the seams and the top edge, and paint with a semi-gloss paint made for bathrooms.',
+      ] },
+    ],
+    faq: [
+      { q: 'How high should board and batten go in a bathroom?', a: 'Many people stop at about 4 feet. Others go up to 5 or 6 feet, or all the way to the ceiling. Enter your height in the tool to see the boards you need.' },
+      { q: 'Should the battens be 1x2 or 1x3 in a small bathroom?', a: 'Both work. A 1x2 is 1 1/2 inches wide and looks lighter. A 1x3 is 2 1/2 inches wide and looks bolder. Try both in the tool.' },
     ],
   },
 ];

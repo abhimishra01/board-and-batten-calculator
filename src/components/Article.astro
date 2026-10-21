@@ -1,6 +1,7 @@
 ---
 // SEO article for the board and batten calculator.
 import { solveByGap, formatInches } from '../lib/layout.mjs';
+import { href } from '../lib/url.ts';
 
 // The "common wall sizes" table is computed here, so it always matches the tool.
 const walls = [8, 10, 12, 14, 16];
@@ -58,8 +59,20 @@ const rows = walls.map((ft) => ({ ft, a: cell(ft, 12), b: cell(ft, 16) }));
     <p>If your design has a top rail, turn on the rails option. The tool spaces them from the floor to the ceiling and adds them to the cut list. Rails are longer than most boards, so the tool splits them and counts the pieces.</p>
     <p>The boards table shows how many 8, 10 and 12 foot boards you need. It allows 1/8 inch for each saw cut and packs the pieces to waste as little as possible. The best option is highlighted. Buy one extra board, because a bad cut or a bowed board happens.</p>
 
-    <h2>Planning a whole room</h2>
-    <p>Measure each wall on its own. Run the numbers for each one and keep the same gap on every wall, so the room looks even. Start from a corner and work around. If a wall has a window, a door or an outlet, mark those first and check that no batten lands on an edge.</p>
+    <h2>Board and batten for an accent wall</h2>
+    <p>An accent wall puts the pattern on one wall only, so the gaps must be equal and the edges must look finished. Gaps of 10 to 14 inches are common. Enter the width and height of that wall and compare a few counts. The <a href={href('/board-and-batten-accent-wall/')}>accent wall page</a> lists the count and gap for widths from 8 to 16 feet.</p>
+
+    <h2>Board and batten for a bathroom</h2>
+    <p>Bathroom walls are short, so small errors show. Many people use tighter gaps here, 6 to 10 inches, and stop the battens at about 4 feet as a wainscot. Enter that height as the wall height. The <a href={href('/board-and-batten-bathroom/')}>bathroom page</a> has a table for 5 to 8 foot walls and the boards to buy for a 4 foot wainscot.</p>
+
+    <h2>Board and batten for an entire room</h2>
+    <p>Measure each wall on its own and run the numbers for each one. Keep the same batten width and a similar gap on every wall, so the room looks even. Start from a corner and work around. If a wall has a window, a door or an outlet, mark those first and check that no batten lands on an edge. Add up the boards from each wall, then buy one extra. The tool works in the browser on a phone or a laptop, so there is no app to install.</p>
+
+    <h2>Square and grid layouts</h2>
+    <p>A square or grid look comes from battens that run up and down and rails that run across. Turn on the rails option and pick how many you want. The tool spaces the battens evenly and puts the rails at even steps from the floor to the ceiling, then adds both to the cut list. See <a href={href('/board-and-batten-calculator-with-rails/')}>the rails page</a> for the marks. To make the boxes closer to square, choose a batten count whose gap is near the gap between rails.</p>
+
+    <h2>Inches or centimeters, and free to use</h2>
+    <p>The calculator is free and needs no sign-up. Use inches, or switch to metric and enter centimeters. Marks and gaps show to the nearest 1/16 inch, or the nearest millimeter in metric.</p>
 
     <h2>Tips before you nail</h2>
     <ul>

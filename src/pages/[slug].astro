@@ -149,6 +149,53 @@ if (page.kind === 'wall') {
     }),
     rowHead: true,
   });
+} else if (page.kind === 'accent') {
+  preset = { width: 144, height: 96, batten: B3, count: solveByGap(144, B3, 12, true).count };
+  tables.push({
+    caption: 'Battens and gap by accent wall width (1x3 battens, batten at each end)',
+    intro: 'Each count gives the gap nearest 10, 12 or 14 inches.',
+    head: ['Wall width', 'Battens', 'Gap', 'Battens', 'Gap', 'Battens', 'Gap'],
+    rows: [8, 10, 12, 14, 16].map((ft) => {
+      const cells = [10, 12, 14].map((g) => { const r = solveByGap(ft * 12, B3, g, true); return [String(r.count), inch(r.gap)]; });
+      return [`${ft} ft`, ...cells.flat()];
+    }),
+    rowHead: true,
+  });
+  tables.push({
+    caption: 'Boards to buy for an accent wall (1x3 battens, gap nearest 12 inches)',
+    intro: 'Battens only. Counts allow 1/8 inch per saw cut. The best option has the fewest boards.',
+    head: ['Wall', 'Battens', 'Best option'],
+    rows: [[8, 96], [10, 96], [12, 96], [12, 108], [14, 108]].map(([ft, h]) => {
+      const c = solveByGap(ft * 12, B3, 12, true).count;
+      const p = plan({ width: ft * 12, height: h, batten: B3, mode: 'count', count: c, withEnds: true });
+      return [`${ft} ft wide, ${h / 12} ft high`, String(c), `${p.best.boards} x ${p.best.stock / 12} ft`];
+    }),
+    rowHead: true,
+  });
+} else if (page.kind === 'bathroom') {
+  const H = 48;
+  preset = { width: 72, height: H, batten: B3, count: solveByGap(72, B3, 8, true).count };
+  tables.push({
+    caption: 'Battens and gap for common bathroom walls (1x3 battens, batten at each end)',
+    intro: 'Each count gives the gap nearest 6, 8 or 10 inches.',
+    head: ['Wall width', 'Battens', 'Gap', 'Battens', 'Gap', 'Battens', 'Gap'],
+    rows: [5, 6, 7, 8].map((ft) => {
+      const cells = [6, 8, 10].map((g) => { const r = solveByGap(ft * 12, B3, g, true); return [String(r.count), inch(r.gap)]; });
+      return [`${ft} ft`, ...cells.flat()];
+    }),
+    rowHead: true,
+  });
+  tables.push({
+    caption: 'Boards to buy for a 4 ft high wainscot (1x3 battens, gap nearest 8 inches)',
+    intro: 'Battens only, each 48 inches long. Counts allow 1/8 inch per saw cut.',
+    head: ['Wall width', 'Battens', 'Best option'],
+    rows: [5, 6, 7, 8].map((ft) => {
+      const c = solveByGap(ft * 12, B3, 8, true).count;
+      const p = plan({ width: ft * 12, height: H, batten: B3, mode: 'count', count: c, withEnds: true });
+      return [`${ft} ft`, String(c), `${p.best.boards} x ${p.best.stock / 12} ft`];
+    }),
+    rowHead: true,
+  });
 }
 
 const others = layouts.filter((l) => l.slug !== page.slug);
