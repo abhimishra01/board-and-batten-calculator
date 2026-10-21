@@ -300,7 +300,7 @@ export const layouts: LayoutPage[] = [
     blurb: 'One feature wall: gaps, marks and boards for common widths.',
     h1: 'Board and batten accent wall calculator',
     metaTitle: 'Board and Batten Accent Wall Calculator (Free)',
-    description: 'Plan a board and batten accent wall. See the batten count and gap for common wall widths, the marks to draw and how many boards to buy. Free, in inches or cm.',
+    description: 'Plan a board and batten accent wall. See the batten count and gap for common widths, the marks to draw and the boards to buy. Free, in inches or cm.',
     note: 'Set to a 12 ft wide accent wall, 8 ft high. Type your own numbers.',
     intro: [
       'A board and batten accent wall covers one wall of the room, often the one behind a bed, a sofa or a dining table. Because only one wall gets the pattern, the gaps are what everyone sees first. They must be equal.',
