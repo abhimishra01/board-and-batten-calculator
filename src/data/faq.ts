@@ -8,4 +8,6 @@ export const faq = [
   { q: 'What is the real width of a 1x3 board?', a: 'A 1x3 is 2 1/2 inches wide and a 1x4 is 3 1/2 inches. A 1x2 is 1 1/2 inches. The name is the size before the wood is dried and planed. Measure your boards with a tape before you enter the width.' },
   { q: 'Can I use metric units?', a: 'Yes. Switch to Metric at the top of the tool. Enter sizes in centimeters. Marks and gaps appear to the nearest millimeter, and board lengths change to 2.4, 3.0 and 3.6 meters.' },
   { q: 'Is the spacing exact if my wall is not square?', a: 'The math is exact for the width you enter. Walls are often a little off, so measure at the top, middle and bottom and use the smallest width. Mark the batten centers along a level line instead of along the floor.' },
+  { q: 'Can I use this for vinyl or Hardie board and batten siding?', a: 'You can use it to space the battens on an exterior wall. Enter the real batten width of your vinyl or Hardie product and the wall width. The tool does not set board lengths or fastening, so follow the maker\'s install guide for those.' },
+  { q: 'Is the calculator free, and does it work for an accent wall or a bathroom?', a: 'It is free. Enter the width and height of any wall, such as an accent wall or a bathroom wall, in inches or centimeters.' },
 ];
